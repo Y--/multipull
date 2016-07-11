@@ -1,0 +1,25 @@
+{
+  "name": "multipull",
+  "version": "1.0.0",
+  "description": "Pull multiple git repository",
+  "main": "pullRepos.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Y--/multipull.git"
+  },
+  "author": "Yves Le Maout <y.lemaout@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Y--/multipull/issues"
+  },
+  "homepage": "https://github.com/Y--/multipull#readme",
+  "dependencies": {
+    "async": "^2.0.0-rc.6",
+    "cli-table": "^0.3.1",
+    "rc": "^1.1.6",
+    "simple-git": "^1.41.0"
+  }
+}
