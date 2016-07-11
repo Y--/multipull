@@ -1,6 +1,6 @@
 {
   "name": "multipull",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Pull multiple git repository",
   "main": "pullRepos.js",
   "scripts": {
