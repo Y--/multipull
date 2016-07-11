@@ -15,6 +15,9 @@
   "bugs": {
     "url": "https://github.com/Y--/multipull/issues"
   },
+  "bin": {
+    "multipull": "./bin/multipull"
+  },
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
     "async": "^2.0.0-rc.6",
