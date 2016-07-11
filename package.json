@@ -19,6 +19,7 @@
   "dependencies": {
     "async": "^2.0.0-rc.6",
     "cli-table": "^0.3.1",
+    "debug": "^2.2.0",
     "rc": "^1.1.6",
     "simple-git": "^1.41.0"
   }
