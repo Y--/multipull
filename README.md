@@ -12,4 +12,4 @@ Add a `.multipullrc` file in your home directory with the following keys :
 
 ## Usage
 
-TODO
+`$ multipull`
