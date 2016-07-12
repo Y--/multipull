@@ -47,6 +47,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
         'Files', 'Changes', 'Insertions', 'Deletions']
   });
 
+  const errors = [];
   for (const [i, repo] of repos.entries()) {
     if (repo !== res[i].repo) { return handleErr(new Error('Unordered results')); }
 
@@ -62,6 +63,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
       pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
     } else {
       pulls = [ 'error', '-', '-', '-' ];
+      errors.push(pull.error);
     }
 
     const elt = {};
@@ -70,6 +72,13 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
   }
 
   console.log(table.toString());
+
+  if (errors.length) {
+    console.error("%d error(s) occured while pulling repos :");
+  }
+  for (const err of errors) {
+    console.error(err);
+  }
 });
 
 function isNative(f) {
