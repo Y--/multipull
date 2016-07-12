@@ -15,6 +15,32 @@ const rootDir = config.root;
 const repos   = config.repos.split(',');
 debug.enabled && debug(`Will process ${repos.join(', ')} repos in ${config.root}.`);
 
+// TODO : implement it properly and make a PR.
+CliTable.prototype.removeEmptyColumns = function() {
+  if (!this.length) { return; }
+
+  const nbColumns  = this[0][Object.keys(this[0])[0]].length;
+  const isColEmpty = new Array(nbColumns).fill(true);
+  for (const row of this) {
+    const header = Object.keys(row)[0];
+    for (const [i, cell] of row[header].entries()) {
+      isColEmpty[i] = isColEmpty[i] && (cell === '' || cell === undefined);
+    }
+  }
+
+  const idxToRemove = new Set(isColEmpty.map((x, i) => x ? i : null).filter(x => x !== null));
+  const filterFunc  = (x, i) => !idxToRemove.has(i);
+
+  for (const row of this) {
+    const header = Object.keys(row)[0];
+    row[header]  = row[header].filter(filterFunc);
+  }
+
+  const shifted     = this.options.head.shift();
+  this.options.head = this.options.head.filter(filterFunc);
+  this.options.head.unshift(shifted);
+};
+
 function processRepo(repo, done) {
   const sg = simpleGit(path.join(rootDir, repo)).silent(true);
   sg.pull((error, pull) => {
@@ -71,6 +97,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     table.push(elt);
   }
 
+  table.removeEmptyColumns();
   console.log(table.toString());
 
   if (errors.length) {
