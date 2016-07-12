@@ -58,11 +58,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     const statuses = ['not_added', 'modified', 'deleted', 'created', 'conflicted'].map(oneOrCountFactory(status));
     let pulls;
     if (!pull.error) {
-      let suffix = '';
-      for (const f of pull.files) {
-        if (!f.endsWith('cc') || !f.endsWith('hh')) { continue; }
-        suffix = ' (n)';
-      }
+      const suffix = pull.files.find(isNative) ? ' (n)' : '';
       pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes, pull.summary.insertions , pull.summary.deletions];
     } else {
       pulls = [ 'error', '-', '-', '-' ];
@@ -75,6 +71,10 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
 
   console.log(table.toString());
 });
+
+function isNative(f) {
+  return f.endsWith('cc') || f.endsWith('hh');
+}
 
 function oneOrCountFactory(obj) {
   return (s) => {
