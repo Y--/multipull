@@ -59,7 +59,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     let pulls;
     if (!pull.error) {
       const suffix = pull.files.find(isNative) ? ' (n)' : '';
-      pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes, pull.summary.insertions , pull.summary.deletions];
+      pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
     } else {
       pulls = [ 'error', '-', '-', '-' ];
     }
