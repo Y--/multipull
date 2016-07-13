@@ -101,7 +101,7 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
   console.log(table.toString());
 
   if (errors.length) {
-    console.error("%d error(s) occured while pulling repos :");
+    console.error("%d error(s) occured while pulling repos :", errors.length);
   }
   for (const err of errors) {
     console.error(err);
