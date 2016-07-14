@@ -138,7 +138,11 @@ function oneOrCountFactory(obj) {
 }
 
 function handleErr(err) {
-  console.error('ERROR :', err.message);
-  console.error(err.stack);
+  if (!err.message || !err.stack) {
+    console.error(err);
+  } else {
+    console.error('ERROR :', err.message);
+    console.error(err.stack);
+  }
   process.exit(-1);
 }
