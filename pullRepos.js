@@ -43,25 +43,29 @@ CliTable.prototype.removeEmptyColumns = function() {
 
 function processRepo(repo, done) {
   const sg = simpleGit(path.join(rootDir, repo)).silent(true);
-  sg.status((err, res) => {
+  sg.fetch(err => {
     if (err) { return done(err); }
 
-    pullRepoIfNotAhead(sg, res, (error, pull) => {
-      if (error) {
-        pull = { error };
-      }
+    sg.status((err, res) => {
+      if (err) { return done(err); }
 
-      sg.status((err, status) => {
-        if (err) { return done(err); }
+      pullRepoIfNotAhead(sg, res, (error, pull) => {
+        if (error) {
+          pull = { error };
+        }
 
-        sg.stashList((err, stash) => {
+        sg.status((err, status) => {
           if (err) { return done(err); }
 
-          if (stash.total === undefined) {
-            stash = { total : 0 };
-          }
+          sg.stashList((err, stash) => {
+            if (err) { return done(err); }
 
-          return done(null, { repo, pull, status, stash });
+            if (stash.total === undefined) {
+              stash = { total : 0 };
+            }
+
+            return done(null, { repo, pull, status, stash });
+          });
         });
       });
     });
@@ -69,15 +73,16 @@ function processRepo(repo, done) {
 }
 
 function pullRepoIfNotAhead(sg, status, done) {
+  if (!status.behind) {
+    return done(null, { files : [], summary : {} });
+  }
+
   if (!status.ahead) {
     return sg.pull(done);
   }
 
-  return sg.fetch(err => {
-    if (err) { return done(err); }
-
-    return done(null, { files : ['*** FETCHED ONLY, MERGE NEEDED ***'], summary : {} });
-  });
+  // TODO : stash, pull and pop stash
+  return done(null, { files : ['*** FETCHED ONLY, MERGE NEEDED ***'], summary : {} });
 }
 
 async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
