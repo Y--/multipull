@@ -24,7 +24,7 @@ CliTable.prototype.removeEmptyColumns = function() {
   for (const row of this) {
     const header = Object.keys(row)[0];
     for (const [i, cell] of row[header].entries()) {
-      isColEmpty[i] = isColEmpty[i] && (cell === '' || cell === undefined);
+      isColEmpty[i] = isColEmpty[i] && cell === '';
     }
   }
 
