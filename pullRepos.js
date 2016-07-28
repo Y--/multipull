@@ -118,7 +118,9 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     }
 
     const elt = {};
-    elt[repo] = [status.current + pos.join('/'), status.tracking, stash.total || '', ...statuses, ...pulls];
+    const current  = status.current  === 'master'        ? '' : (status.current  || '*** none ***');
+    const tracking = status.tracking === 'origin/master' ? '' : (status.tracking || '*** none ***');
+    elt[repo] = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
     table.push(elt);
   }
 
