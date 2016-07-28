@@ -77,12 +77,16 @@ function pullRepoIfNotAhead(sg, status, done) {
     return done(null, { files : [], summary : {} });
   }
 
-  if (!status.ahead) {
+  if (!status.ahead && isLocalClean(status)) {
     return sg.pull(done);
   }
 
   // TODO : stash, pull and pop stash
   return done(null, { files : ['*** FETCHED ONLY, MERGE NEEDED ***'], summary : {} });
+}
+
+function isLocalClean(status) {
+  return !['modified', 'deleted', 'created', 'conflicted'].map(k => status[k]).filter(v => !!v.length).length;
 }
 
 async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
