@@ -7,6 +7,7 @@ const startTs   = new Date();
 const CliTable  = require('cli-table');
 const debug     = require('debug')(appName);
 const path      = require('path');
+const Progress  = require('progress');
 const rc        = require('rc');
 const simpleGit = require('simple-git');
 
@@ -14,6 +15,13 @@ const config    = rc(appName);
 const rootDir   = config.root;
 const repos     = config.repos.split(',');
 
+const progress  = new Progress(':bar :percent :elapsed', {
+  clear      : true,
+  complete   : '\u001b[42m \u001b[0m',
+  incomplete : '\u001b[41m \u001b[0m',
+  width      : 100,
+  total      : repos.length
+});
 
 debug.enabled && debug(`Will process ${repos.join(', ')} repos in ${config.root}.`);
 
@@ -43,7 +51,7 @@ CliTable.prototype.removeEmptyColumns = function() {
   this.options.head.unshift(shifted);
 };
 
-processTasksParallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
+processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progress.tick(), (err, res) => {
   if (err) { return handleErr(err); }
 
   const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions'];
@@ -99,7 +107,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), (err, res) =>
   }
 });
 
-function processTasksParallel(tasks, done) {
+function processTasksParallel(tasks, onTaskComplete, done) {
   let expectedAnswers = tasks.length;
   const responses  = new Array(expectedAnswers);
   for (const [i, task] of tasks.entries()) {
@@ -111,6 +119,8 @@ function processTasksParallel(tasks, done) {
   function _onTaskCompleteGenerator(taskId) {
     return (err, res) => {
       responses[taskId] = { taskId, err, res };
+      onTaskComplete();
+
       if (--expectedAnswers) { return; }
 
       return done(null, responses);
