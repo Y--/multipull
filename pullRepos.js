@@ -86,8 +86,8 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
       errors.push(pull.error);
     }
 
-    const current  = status.current  === 'master'        ? '' : (status.current  || '*** none ***');
-    const tracking = status.tracking === 'origin/master' ? '' : (status.tracking || '*** none ***');
+    const current  = differentOrEmpty(status.current, 'master');
+    const tracking = differentOrEmpty(status.tracking, 'origin/' + status.current);
     const line     = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
     if (line.find(e => e !== '')) {
       line.push(res[i].elapsed);
@@ -130,6 +130,10 @@ function processTasksParallel(tasks, onTaskComplete, done) {
       return done(null, responses);
     };
   }
+}
+
+function differentOrEmpty(actual, common) {
+  return actual === common ? '' : (actual || '*** none ***');
 }
 
 function isNative(f) {
