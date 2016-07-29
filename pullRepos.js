@@ -4,7 +4,6 @@
 const appName   = 'multipull';
 
 const simpleGit = require('simple-git');
-const async     = require('async');
 const CliTable  = require('cli-table');
 const path      = require('path');
 const rc        = require('rc');
@@ -41,20 +40,26 @@ CliTable.prototype.removeEmptyColumns = function() {
   this.options.head.unshift(shifted);
 };
 
-async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
+processTasksParallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
   if (err) { return handleErr(err); }
 
-  const table = new CliTable({
-      head : ['',
-        'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C',
-        'Files', 'Changes', 'Insertions', 'Deletions']
-  });
+  const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions'];
+  const table = new CliTable({ head });
 
   const errors = [];
   for (const [i, repo] of repos.entries()) {
-    if (repo !== res[i].repo) { return handleErr(new Error('Unordered results')); }
+    const elt = {};
+    if (res[i].err) {
+      const repoErr = processError(repo, res[i].err);
+      elt[repo]     = new Array(head.length);
+      elt[repo][0]  = repoErr.message;
+      table.push(elt);
+      continue;
+    }
 
-    const { pull, status, stash } = res[i];
+    if (repo !== res[i].res.repo) { console.log(repo, res[i].res.repo); return handleErr(new Error('Unordered results')); }
+
+    const { pull, status, stash } = res[i].res;
     const pos = [];
     if (status.ahead)  { pos.push('+' + status.ahead); }
     if (status.behind) { pos.push('-' + status.behind); }
@@ -69,7 +74,6 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
       errors.push(pull.error);
     }
 
-    const elt = {};
     const current  = status.current  === 'master'        ? '' : (status.current  || '*** none ***');
     const tracking = status.tracking === 'origin/master' ? '' : (status.tracking || '*** none ***');
     elt[repo] = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
@@ -88,6 +92,25 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     console.error(err);
   }
 });
+
+function processTasksParallel(tasks, done) {
+  let expectedAnswers = tasks.length;
+  const responses  = new Array(expectedAnswers);
+  for (const [i, task] of tasks.entries()) {
+    task(_onTaskCompleteGenerator(i));
+  }
+
+  return;
+
+  function _onTaskCompleteGenerator(taskId) {
+    return (err, res) => {
+      responses[taskId] = { taskId, err, res };
+      if (--expectedAnswers) { return; }
+
+      return done(null, responses);
+    };
+  }
+}
 
 function isNative(f) {
   return f.endsWith('cc') || f.endsWith('hh');
@@ -115,10 +138,10 @@ function handleErr(err) {
 function processRepo(repo, done) {
   const sg = simpleGit(path.join(rootDir, repo)).silent(true);
   return sg.fetch(err => {
-    if (err) { return onError(err); }
+    if (err) { return done(err); }
 
     sg.status((err, res) => {
-      if (err) { return onError(err); }
+      if (err) { return done(err); }
 
       pullRepoIfNotAhead(sg, res, (error, pull) => {
         if (error) {
@@ -126,10 +149,10 @@ function processRepo(repo, done) {
         }
 
         sg.status((err, status) => {
-          if (err) { return onError(err); }
+          if (err) { return done(err); }
 
           sg.stashList((err, stash) => {
-            if (err) { return onError(err); }
+            if (err) { return done(err); }
 
             if (stash.total === undefined) {
               stash = { total : 0 };
@@ -141,19 +164,19 @@ function processRepo(repo, done) {
       });
     });
   });
+}
 
-  function onError(err) {
-    if (typeof err !== 'string') {
-      err.message = `Error occured while processing ${repo} : ${err.message}`;
-      return done(err);
-    }
-
-    const error    = err.split('\n');
-    const message  = error.shift().replace(/.*Error: /, '');
-    const finalErr = new Error(`Error occured while processing ${repo} : ${message}`);
-    finalErr.stack = error.join('\n');
-    return done(finalErr);
+function processError(repo, err) {
+  if (typeof err !== 'string') {
+    err.message = `Error occured while processing ${repo} : ${err.message}`;
+    return err;
   }
+
+  const error    = err.split('\n');
+  const message  = error.shift().replace(/.*Error: /, '');
+  const finalErr = new Error(`Error occured while processing ${repo} : ${message}`);
+  finalErr.stack = error.join('\n');
+  return finalErr;
 }
 
 function pullRepoIfNotAhead(sg, status, done) {
