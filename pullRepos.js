@@ -97,7 +97,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   console.log(table.toString());
 
   const elapsed = new Date() - startTs;
-  console.log("Complete in : %ds", elapsed / 1000);
+  console.log("Checked %d repositories in : %ds", repos.length, elapsed / 1000);
 
   if (errors.length) {
     console.error("%d error(s) occured while pulling repos :", errors.length);
