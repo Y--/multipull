@@ -134,7 +134,9 @@ async.parallel(repos.map(r => done => processRepo(r, done)), (err, res) => {
     const current  = status.current  === 'master'        ? '' : (status.current  || '*** none ***');
     const tracking = status.tracking === 'origin/master' ? '' : (status.tracking || '*** none ***');
     elt[repo] = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
-    table.push(elt);
+    if (elt[repo].find(e => e !== '')) {
+      table.push(elt);
+    }
   }
 
   table.removeEmptyColumns();
