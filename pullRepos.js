@@ -54,7 +54,7 @@ CliTable.prototype.removeEmptyColumns = function() {
 processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progress.tick(), (err, res) => {
   if (err) { return handleErr(err); }
 
-  const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'Elapsed'];
+  const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'E'];
   const table = new CliTable({ head });
 
   const errors = [];
