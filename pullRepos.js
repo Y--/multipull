@@ -3,15 +3,17 @@
 /* eslint-disable no-console */
 const appName   = 'multipull';
 
-const simpleGit = require('simple-git');
 const CliTable  = require('cli-table');
+const debug     = require('debug')(appName);
 const path      = require('path');
 const rc        = require('rc');
-const debug     = require('debug')(appName);
+const simpleGit = require('simple-git');
 
-const config  = rc(appName);
-const rootDir = config.root;
-const repos   = config.repos.split(',');
+const config    = rc(appName);
+const rootDir   = config.root;
+const repos     = config.repos.split(',');
+
+
 debug.enabled && debug(`Will process ${repos.join(', ')} repos in ${config.root}.`);
 
 // TODO : implement it properly and make a PR.
