@@ -43,11 +43,11 @@ CliTable.prototype.removeEmptyColumns = function() {
 
 function processRepo(repo, done) {
   const sg = simpleGit(path.join(rootDir, repo)).silent(true);
-  sg.fetch(err => {
-    if (err) { return done(err); }
+  return sg.fetch(err => {
+    if (err) { return onError(err); }
 
     sg.status((err, res) => {
-      if (err) { return done(err); }
+      if (err) { return onError(err); }
 
       pullRepoIfNotAhead(sg, res, (error, pull) => {
         if (error) {
@@ -55,10 +55,10 @@ function processRepo(repo, done) {
         }
 
         sg.status((err, status) => {
-          if (err) { return done(err); }
+          if (err) { return onError(err); }
 
           sg.stashList((err, stash) => {
-            if (err) { return done(err); }
+            if (err) { return onError(err); }
 
             if (stash.total === undefined) {
               stash = { total : 0 };
@@ -70,6 +70,19 @@ function processRepo(repo, done) {
       });
     });
   });
+
+  function onError(err) {
+    if (typeof err !== 'string') {
+      err.message = `Error occured while processing ${repo} : ${err.message}`;
+      return done(err);
+    }
+
+    const error    = err.split('\n');
+    const message  = error.shift().replace(/.*Error: /, '');
+    const finalErr = new Error(`Error occured while processing ${repo} : ${message}`);
+    finalErr.stack = error.join('\n');
+    return done(finalErr);
+  }
 }
 
 function pullRepoIfNotAhead(sg, status, done) {
@@ -152,7 +165,7 @@ function handleErr(err) {
   if (!err.message || !err.stack) {
     console.error(err);
   } else {
-    console.error('ERROR :', err.message);
+    console.error(err.message);
     console.error(err.stack);
   }
   process.exit(-1);
