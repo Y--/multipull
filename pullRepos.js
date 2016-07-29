@@ -94,8 +94,49 @@ function pullRepoIfNotAhead(sg, status, done) {
     return sg.pull(done);
   }
 
-  // TODO : stash, pull and pop stash
-  return done(null, { files : ['*** FETCHED ONLY, MERGE NEEDED ***'], summary : {} });
+  commitWIPIfUnclean(sg, status, err => {
+    if (err) { return done(err); }
+
+    sg.pull(null, null, { '--rebase' : null, '--stat': null }, (err, res) => {
+
+      abortRebaseIfFailed(sg, err, res, (err, rebase = {}) => {
+        if (err) { return done(err); }
+
+        resetWIPIfUnclean(sg, status, err => {
+          if (err) { return done(err); }
+
+          const result = rebase.success ? rebase.result : {
+            files   : ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'],
+            summary : {}
+          };
+          return done(null, result);
+        });
+      });
+    });
+  });
+}
+
+function abortRebaseIfFailed(sg, errRebasing, result, done) {
+  if (errRebasing) {
+    return sg._run(['rebase', '--abort'], done);
+  }
+
+  if (typeof result === 'string') {
+    result = { files : ['*** Rebased : TODO : find the status ***'], summary : {} };
+  }
+  return done(null, { success : true, result });
+}
+
+function commitWIPIfUnclean(sg, status, done) {
+  if (isLocalClean(status)) { return done(); }
+
+  sg.commit('[multipull] WIP', null, { '-a' : null }, done);
+}
+
+function resetWIPIfUnclean(sg, status, done) {
+  if (isLocalClean(status)) { return done(); }
+
+  sg.reset(['--soft', 'HEAD~1'], done);
 }
 
 function isLocalClean(status) {
