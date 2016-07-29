@@ -54,7 +54,7 @@ CliTable.prototype.removeEmptyColumns = function() {
 processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progress.tick(), (err, res) => {
   if (err) { return handleErr(err); }
 
-  const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions'];
+  const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'Elapsed'];
   const table = new CliTable({ head });
 
   const errors = [];
@@ -64,6 +64,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
       const repoErr = processError(repo, res[i].err);
       elt[repo]     = new Array(head.length);
       elt[repo][0]  = repoErr.message;
+      elt[repo][head.length - 1] = res[i].elapsed;
       table.push(elt);
       continue;
     }
@@ -87,8 +88,10 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
 
     const current  = status.current  === 'master'        ? '' : (status.current  || '*** none ***');
     const tracking = status.tracking === 'origin/master' ? '' : (status.tracking || '*** none ***');
-    elt[repo] = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
-    if (elt[repo].find(e => e !== '')) {
+    const line     = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
+    if (line.find(e => e !== '')) {
+      line.push(res[i].elapsed);
+      elt[repo] = line;
       table.push(elt);
     }
   }
@@ -111,14 +114,15 @@ function processTasksParallel(tasks, onTaskComplete, done) {
   let expectedAnswers = tasks.length;
   const responses  = new Array(expectedAnswers);
   for (const [i, task] of tasks.entries()) {
-    task(_onTaskCompleteGenerator(i));
+    task(_onTaskCompleteGenerator(i, new Date()));
   }
 
   return;
 
-  function _onTaskCompleteGenerator(taskId) {
+  function _onTaskCompleteGenerator(taskId, startTs) {
     return (err, res) => {
-      responses[taskId] = { taskId, err, res };
+      const elapsed = new Date() - startTs;
+      responses[taskId] = { taskId, err, res, elapsed };
       onTaskComplete();
 
       if (--expectedAnswers) { return; }
