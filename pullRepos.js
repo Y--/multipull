@@ -2,6 +2,7 @@
 
 /* eslint-disable no-console */
 const appName   = 'multipull';
+const startTs   = new Date();
 
 const CliTable  = require('cli-table');
 const debug     = require('debug')(appName);
@@ -86,6 +87,9 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), (err, res) =>
 
   table.removeEmptyColumns();
   console.log(table.toString());
+
+  const elapsed = new Date() - startTs;
+  console.log("Complete in : %ds", elapsed / 1000);
 
   if (errors.length) {
     console.error("%d error(s) occured while pulling repos :", errors.length);
