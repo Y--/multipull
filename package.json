@@ -24,6 +24,6 @@
     "debug": "^2.2.0",
     "progress": "^1.1.8",
     "rc": "^1.1.6",
-    "simple-git": "github:Y--/git-js#master"
+    "simple-git": "^1.44.0"
   }
 }
