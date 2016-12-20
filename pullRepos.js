@@ -61,11 +61,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   for (const [i, repo] of repos.entries()) {
     const elt = {};
     if (res[i].err) {
-      const repoErr = processError(repo, res[i].err);
-      elt[repo]     = new Array(head.length);
-      elt[repo][0]  = repoErr.message;
-      elt[repo][head.length - 1] = res[i].elapsed;
-      table.push(elt);
+      errors.push({ repo, error : res[i].err });
       continue;
     }
 
@@ -77,14 +73,13 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
     if (status.behind) { pos.push('-' + status.behind); }
 
     const statuses = ['not_added', 'modified', 'deleted', 'created', 'conflicted'].map(oneOrCountFactory(status));
-    let pulls;
-    if (!pull.error) {
-      const suffix = pull.files.find(isNative) ? ' (n)' : '';
-      pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
-    } else {
-      pulls = [ 'error', '-', '-', '-' ];
-      errors.push(pull.error);
+    if (pull.error) {
+      errors.push({ repo, error : pull.error });
+      continue;
     }
+
+    const suffix = pull.files.find(isNative) ? ' (n)' : '';
+    const pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
 
     const current  = differentOrEmpty(status.current, 'master');
     const tracking = differentOrEmpty(status.tracking, 'origin/' + status.current);
@@ -105,8 +100,8 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   if (errors.length) {
     console.error("%d error(s) occured while pulling repos :", errors.length);
   }
-  for (const err of errors) {
-    console.error(err);
+  for (const e of errors) {
+    console.error('[%s] - %s', e.repo, e.error);
   }
 });
 
@@ -188,19 +183,6 @@ function processRepo(repo, done) {
       });
     });
   });
-}
-
-function processError(repo, err) {
-  if (typeof err !== 'string') {
-    err.message = `Error occured while processing ${repo} : ${err.message}`;
-    return err;
-  }
-
-  const error    = err.split('\n');
-  const message  = error.shift().replace(/.*Error: /, '');
-  const finalErr = new Error(`Error occured while processing ${repo} : ${message}`);
-  finalErr.stack = error.join('\n');
-  return finalErr;
 }
 
 function pullRepoIfNotAhead(sg, status, done) {
