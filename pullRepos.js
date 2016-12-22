@@ -230,7 +230,7 @@ function abortRebaseIfFailed(sg, errRebasing, result, done) {
 function commitWIPIfUnclean(sg, status, done) {
   if (isLocalClean(status)) { return done(); }
 
-  sg.commit('[multipull] WIP', null, { '-a' : null }, done);
+  sg.commit('[multipull] WIP', null, { '--no-verify': null, '-a' : null }, done);
 }
 
 function resetWIPIfUnclean(sg, status, done) {
