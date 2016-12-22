@@ -100,8 +100,9 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   if (errors.length) {
     console.error("%d error(s) occured while pulling repos :", errors.length);
   }
+
   for (const e of errors) {
-    console.error('[%s] - %s', e.repo, e.error);
+    console.error('[%s]: %s', e.repo, e.error);
   }
 });
 
