@@ -92,7 +92,9 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   }
 
   table.removeEmptyColumns();
-  console.log(table.toString());
+  if (table.length) {
+    console.log(table.toString());
+  }
 
   const elapsed = new Date() - startTs;
   console.log("Checked %d repositories in : %ds", repos.length, elapsed / 1000);
