@@ -1,8 +1,8 @@
 'use strict';
 
 /* eslint-disable no-console */
-const appName   = 'multipull';
-const startTs   = new Date();
+const appName = 'multipull';
+const startTs = new Date();
 
 const CliTable  = require('cli-table');
 const debug     = require('debug')(appName);
@@ -11,8 +11,8 @@ const Progress  = require('progress');
 const rc        = require('rc');
 const simpleGit = require('simple-git');
 
-const config    = rc(appName);
-const rootDir   = config.root;
+const config   = rc(appName);
+const rootDir  = config.root;
 const repos    = (config.repos || '').split(',');
 const branches = (config.branches || '').split(',');
 
@@ -86,7 +86,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
     }
 
     const suffix = pull.files.find(isNative) ? ' (n)' : '';
-    const pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
+    const pulls  = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
 
     const branch   = defaultBranches.get(repo) || 'master';
     const current  = differentOrEmpty(status.current, branch);
