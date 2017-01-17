@@ -13,7 +13,7 @@ const simpleGit = require('simple-git');
 
 const config    = rc(appName);
 const rootDir   = config.root;
-const repos     = config.repos.split(',');
+const repos    = (config.repos || '').split(',');
 const branches = (config.branches || '').split(',');
 
 const defaultBranches = new Map();
