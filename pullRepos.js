@@ -14,6 +14,13 @@ const simpleGit = require('simple-git');
 const config    = rc(appName);
 const rootDir   = config.root;
 const repos     = config.repos.split(',');
+const branches = (config.branches || '').split(',');
+
+const defaultBranches = new Map();
+for (const repoBranch of branches) {
+  const [repo, branch] = repoBranch.split(':');
+  defaultBranches.set(repo, branch);
+}
 
 const progress  = new Progress(':bar :percent :elapsed', {
   clear      : true,
@@ -81,7 +88,8 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
     const suffix = pull.files.find(isNative) ? ' (n)' : '';
     const pulls = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
 
-    const current  = differentOrEmpty(status.current, 'master');
+    const branch   = defaultBranches.get(repo) || 'master';
+    const current  = differentOrEmpty(status.current, branch);
     const tracking = differentOrEmpty(status.tracking, 'origin/' + status.current);
     const line     = [ current + pos.join('/'), tracking, stash.total || '', ...statuses, ...pulls];
     if (line.find(e => e !== '')) {
