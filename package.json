@@ -21,9 +21,9 @@
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
     "cli-table": "^0.3.1",
-    "debug": "^2.2.0",
+    "debug": "^2.6.0",
     "progress": "^1.1.8",
     "rc": "^1.1.6",
-    "simple-git": "^1.44.0"
+    "simple-git": "^1.65.0"
   }
 }
