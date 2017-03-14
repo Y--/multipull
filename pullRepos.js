@@ -85,8 +85,9 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
       continue;
     }
 
-    const suffix = pull.files.find(isNative) ? ' (n)' : '';
-    const pulls  = [oneOrCountFactory(pull)('files') + suffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
+    const nativeSuffix  = pull.files.find(isNative)  ? ' (n)' : '';
+    const packageSuffix = pull.files.find(isPackage) ? ' (p)' : '';
+    const pulls  = [oneOrCountFactory(pull)('files') + nativeSuffix + packageSuffix, pull.summary.changes || '', pull.summary.insertions || '', pull.summary.deletions || ''];
 
     const branch   = defaultBranches.get(repo) || 'master';
     const current  = differentOrEmpty(status.current, branch);
@@ -144,6 +145,10 @@ function differentOrEmpty(actual, common) {
 
 function isNative(f) {
   return f.endsWith('cc') || f.endsWith('hh');
+}
+
+function isPackage(f) {
+  return f === 'package.json';
 }
 
 function oneOrCountFactory(obj) {
@@ -247,7 +252,11 @@ function commitWIPIfUnclean(sg, status, done) {
 function resetWIPIfUnclean(sg, status, done) {
   if (isLocalClean(status)) { return done(); }
 
-  sg.reset(['--soft', 'HEAD~1'], done);
+  sg.reset(['--soft', 'HEAD~1'], err => {
+    if (err) { return done(err); }
+
+    return sg.reset(['HEAD'], done);
+  });
 }
 
 function isLocalClean(status) {
