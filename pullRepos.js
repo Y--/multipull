@@ -171,34 +171,48 @@ function handleErr(err) {
 }
 
 function processRepo(repo, done) {
-  const sg = simpleGit(path.join(rootDir, repo)).silent(true);
-  return sg.fetch(err => {
+  return initSimpleGit(repo, (err, sg) => {
     if (err) { return done(err); }
 
-    sg.status((err, res) => {
+    return sg.fetch(err => {
       if (err) { return done(err); }
 
-      pullRepoIfNotAhead(sg, res, (error, pull) => {
-        if (error) {
-          pull = { error };
-        }
+      return sg.status((err, res) => {
+        if (err) { return done(err); }
 
-        sg.status((err, status) => {
-          if (err) { return done(err); }
+        return pullRepoIfNotAhead(sg, res, (error, pull) => {
+          if (error) {
+            pull = { error };
+          }
 
-          sg.stashList((err, stash) => {
+          return sg.status((err, status) => {
             if (err) { return done(err); }
 
-            if (stash.total === undefined) {
-              stash = { total : 0 };
-            }
+            return sg.stashList((err, stash) => {
+              if (err) { return done(err); }
 
-            return done(null, { repo, pull, status, stash });
+              if (stash.total === undefined) {
+                stash = { total : 0 };
+              }
+
+              return done(null, { repo, pull, status, stash });
+            });
           });
         });
       });
     });
   });
+}
+
+function initSimpleGit(repo, done) {
+  const repoPath = path.join(rootDir, repo);
+  try {
+    const sg = simpleGit(repoPath).silent(true);
+    return done(null, sg);
+  } catch (err) {
+    err.message = `Cannot setup git in ${repoPath} : ${err.message}`;
+    return done(err);
+  }
 }
 
 function pullRepoIfNotAhead(sg, status, done) {
