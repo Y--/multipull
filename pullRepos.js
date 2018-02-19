@@ -221,7 +221,7 @@ async function _pullRepoIfNotAhead(sg, status) {
     rebase.result = await sg.pull(null, null, { '--rebase' : null, '--stat': null });
     rebase.success = true;
   } catch (err) {
-    await sg._run(['rebase', '--abort']);
+    await sg.rebase({ '--abort' : null });
   }
 
   await resetWIPIfUnclean(sg, status);
