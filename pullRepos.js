@@ -216,9 +216,13 @@ async function _pullRepoIfNotAhead(sg, status) {
 
   await commitWIPIfUnclean(sg, status);
 
-  const { err, res } = await tryRebase(sg);
-
-  const rebase = await abortRebaseIfFailed(sg, err, res) || {};
+  const rebase = { success: false };
+  try {
+    rebase.result = await sg.pull(null, null, { '--rebase' : null, '--stat': null });
+    rebase.success = true;
+  } catch (err) {
+    await sg._run(['rebase', '--abort']);
+  }
 
   await resetWIPIfUnclean(sg, status);
 
@@ -226,28 +230,6 @@ async function _pullRepoIfNotAhead(sg, status) {
     files   : ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'],
     summary : {}
   };
-}
-
-// TODO : review this.
-async function tryRebase(sg) {
-  const result = {};
-  try {
-    result.res = await sg.pull(null, null, { '--rebase' : null, '--stat': null });
-  } catch (err) {
-    result.err = err;
-  }
-  return result;
-}
-
-function abortRebaseIfFailed(sg, errRebasing, result) {
-  if (errRebasing) {
-    return sg._run(['rebase', '--abort']);
-  }
-
-  if (typeof result === 'string') {
-    result = { files : ['*** Rebased : TODO : find the status ***'], summary : {} };
-  }
-  return { success : true, result };
 }
 
 function commitWIPIfUnclean(sg, status) {
