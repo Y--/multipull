@@ -9,7 +9,7 @@ const debug     = require('debug')(appName);
 const path      = require('path');
 const Progress  = require('progress');
 const rc        = require('rc');
-const simpleGit = require('simple-git');
+const simpleGit = require('simple-git/promise');
 
 const config   = rc(appName);
 const rootDir  = config.root;
@@ -58,8 +58,8 @@ CliTable.prototype.removeEmptyColumns = function() {
   this.options.head.unshift(shifted);
 };
 
-processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progress.tick(), (err, res) => {
-  if (err) { return handleErr(err); }
+(async function main() {
+  const res = await Promise.all(repos.map(processRepo));
 
   const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'E'];
   const table = new CliTable({ head });
@@ -75,6 +75,7 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
     if (repo !== res[i].res.repo) { console.log(repo, res[i].res.repo); return handleErr(new Error('Unordered results')); }
 
     const { pull, status, stash } = res[i].res;
+
     const pos = [];
     if (status.ahead)  { pos.push('+' + status.ahead); }
     if (status.behind) { pos.push('-' + status.behind); }
@@ -106,38 +107,16 @@ processTasksParallel(repos.map(r => done => processRepo(r, done)), () => progres
   }
 
   const elapsed = new Date() - startTs;
-  console.log("Checked %d repositories in : %ds", repos.length, elapsed / 1000);
+  console.log(`Checked ${repos.length} repositories in : ${elapsed / 1000}s`);
 
   if (errors.length) {
-    console.error("%d error(s) occured while pulling repos :", errors.length);
+    console.error(`${errors.length} error(s) occured while pulling repos :`);
   }
 
   for (const e of errors) {
-    console.error('[%s]: %s', e.repo, e.error);
+    console.error(`[${e.repo}]: ${e.error}`);
   }
-});
-
-function processTasksParallel(tasks, onTaskComplete, done) {
-  let expectedAnswers = tasks.length;
-  const responses  = new Array(expectedAnswers);
-  for (const [i, task] of tasks.entries()) {
-    task(_onTaskCompleteGenerator(i, new Date()));
-  }
-
-  return;
-
-  function _onTaskCompleteGenerator(taskId, startTs) {
-    return (err, res) => {
-      const elapsed = new Date() - startTs;
-      responses[taskId] = { taskId, err, res, elapsed };
-      onTaskComplete();
-
-      if (--expectedAnswers) { return; }
-
-      return done(null, responses);
-    };
-  }
-}
+})();
 
 function differentOrEmpty(actual, common) {
   return actual === common ? '' : (actual || '*** none ***');
@@ -170,107 +149,119 @@ function handleErr(err) {
   process.exit(-1);
 }
 
-function processRepo(repo, done) {
-  return initSimpleGit(repo, (err, sg) => {
-    if (err) { return done(err); }
+async function processRepo(repo, retry = 1) {
+  const startTs = new Date();
+  const result = {};
+  try {
+    result.res = await doProcessRepo(repo);
+  } catch (err) {
+    result.err = err;
+  }
 
-    return sg.fetch(err => {
-      if (err) { return done(err); }
+  debug.enabled && debug(`Completed task ${repo}`);
 
-      return sg.status((err, res) => {
-        if (err) { return done(err); }
+  result.elapsed = new Date() - startTs;
+  progress.tick();
 
-        return pullRepoIfNotAhead(sg, res, (error, pull) => {
-          if (error) {
-            pull = { error };
-          }
-
-          return sg.status((err, status) => {
-            if (err) { return done(err); }
-
-            return sg.stashList((err, stash) => {
-              if (err) { return done(err); }
-
-              if (stash.total === undefined) {
-                stash = { total : 0 };
-              }
-
-              return done(null, { repo, pull, status, stash });
-            });
-          });
-        });
-      });
-    });
-  });
+  return result;
 }
 
-function initSimpleGit(repo, done) {
+async function doProcessRepo(repo) {
+  debug.enabled && debug(`Processing repository ${repo}...`);
+  const sg = initSimpleGit(repo);
+
+  await sg.fetch();
+
+  const initialStatus = await sg.status();
+
+  const pull = await pullRepoIfNotAhead(sg, initialStatus);
+
+  const status = await sg.status();
+
+  const stash = await sg.stashList();
+
+  if (stash.total === undefined) {
+    stash.total = 0;
+  }
+
+  return { repo, pull, status, stash };
+}
+
+function initSimpleGit(repo) {
   const repoPath = path.join(rootDir, repo);
   try {
-    const sg = simpleGit(repoPath).silent(true);
-    return done(null, sg);
+    return simpleGit(repoPath).silent(true);
   } catch (err) {
     err.message = `Cannot setup git in ${repoPath} : ${err.message}`;
-    return done(err);
+    throw err;
   }
 }
 
-function pullRepoIfNotAhead(sg, status, done) {
+async function pullRepoIfNotAhead(sg, status) {
+  try {
+    return await _pullRepoIfNotAhead(sg, status);
+  } catch (error) {
+    return { error };
+  }
+}
+
+async function _pullRepoIfNotAhead(sg, status) {
   if (!status.behind) {
-    return done(null, { files : [], summary : {} });
+    return { files : [], summary : {} };
   }
 
   if (!status.ahead && isLocalClean(status)) {
-    return sg.pull(done);
+    return sg.pull();
   }
 
-  commitWIPIfUnclean(sg, status, err => {
-    if (err) { return done(err); }
+  await commitWIPIfUnclean(sg, status);
 
-    sg.pull(null, null, { '--rebase' : null, '--stat': null }, (err, res) => {
+  const { err, res } = await tryRebase(sg);
 
-      abortRebaseIfFailed(sg, err, res, (err, rebase = {}) => {
-        if (err) { return done(err); }
+  const rebase = await abortRebaseIfFailed(sg, err, res) || {};
 
-        resetWIPIfUnclean(sg, status, err => {
-          if (err) { return done(err); }
+  await resetWIPIfUnclean(sg, status);
 
-          const result = rebase.success ? rebase.result : {
-            files   : ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'],
-            summary : {}
-          };
-          return done(null, result);
-        });
-      });
-    });
-  });
+  return rebase.success ? rebase.result : {
+    files   : ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'],
+    summary : {}
+  };
 }
 
-function abortRebaseIfFailed(sg, errRebasing, result, done) {
+// TODO : review this.
+async function tryRebase(sg) {
+  const result = {};
+  try {
+    result.res = await sg.pull(null, null, { '--rebase' : null, '--stat': null });
+  } catch (err) {
+    result.err = err;
+  }
+  return result;
+}
+
+function abortRebaseIfFailed(sg, errRebasing, result) {
   if (errRebasing) {
-    return sg._run(['rebase', '--abort'], done);
+    return sg._run(['rebase', '--abort']);
   }
 
   if (typeof result === 'string') {
     result = { files : ['*** Rebased : TODO : find the status ***'], summary : {} };
   }
-  return done(null, { success : true, result });
+  return { success : true, result };
 }
 
-function commitWIPIfUnclean(sg, status, done) {
-  if (isLocalClean(status)) { return done(); }
+function commitWIPIfUnclean(sg, status) {
+  if (isLocalClean(status)) { return; }
 
-  sg.commit('[multipull] WIP', null, { '--no-verify': null, '-a' : null }, done);
+  return sg.commit('[multipull] WIP', null, { '--no-verify': null, '-a' : null });
 }
 
-function resetWIPIfUnclean(sg, status, done) {
-  if (isLocalClean(status)) { return done(); }
+async function resetWIPIfUnclean(sg, status) {
+  if (isLocalClean(status)) { return; }
 
-  sg.reset(['--soft', 'HEAD~1'], err => {
-    if (err) { return done(err); }
+  await sg.reset(['--soft', 'HEAD~1']);
 
-    return sg.reset(['HEAD'], done);
-  });
+  return sg.reset(['HEAD']);
 }
 
 function isLocalClean(status) {
