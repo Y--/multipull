@@ -11,10 +11,11 @@ const Progress  = require('progress');
 const rc        = require('rc');
 const simpleGit = require('simple-git/promise');
 
-const config   = rc(appName);
-const rootDir  = config.root;
-const repos    = (config.repos || '').split(',');
-const branches = (config.branches || '').split(',');
+const config    = rc(appName);
+const rootDir   = config.root;
+const repos     = (config.repos || '').split(',');
+const branches  = (config.branches || '').split(',');
+const chunkSize = config.chunkSize || 8;
 
 const defaultBranches = new Map();
 for (const repoBranch of branches) {
@@ -59,8 +60,7 @@ CliTable.prototype.removeEmptyColumns = function() {
 };
 
 (async function main() {
-  const res = await Promise.all(repos.map(processRepo));
-
+  const res = await processRepos(repos, chunkSize);
   const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'E'];
   const table = new CliTable({ head });
 
@@ -147,6 +147,17 @@ function handleErr(err) {
     console.error(err.stack);
   }
   process.exit(-1);
+}
+
+async function processRepos(repos, chunkSize) {
+  const results = [];
+  for (let i = 0; i < repos.length; i += chunkSize) {
+    const chunk = repos.slice(i, i + chunkSize).map(processRepo);
+    const chunkResults = await Promise.all(chunk);
+    results.push(...chunkResults);
+  }
+
+  return results;
 }
 
 async function processRepo(repo, retry = 1) {
