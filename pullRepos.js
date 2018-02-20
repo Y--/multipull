@@ -72,7 +72,9 @@ CliTable.prototype.removeEmptyColumns = function() {
       continue;
     }
 
-    if (repo !== res[i].res.repo) { console.log(repo, res[i].res.repo); return handleErr(new Error('Unordered results')); }
+    if (repo !== res[i].res.repo) {
+      return handleErr(new Error(`Unordered results: expected ${repo} at position ${i}, but got ${res[i].res.repo}`));
+    }
 
     const { pull, status, stash } = res[i].res;
 
