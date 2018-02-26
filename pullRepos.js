@@ -171,7 +171,7 @@ async function doProcessRepo(repo) {
   debug.enabled && debug(`Processing repository ${repo}...`);
   const sg = initSimpleGit(repo);
 
-  await sg.fetch();
+  await sg.fetch(['--all']);
 
   const initialStatus = await sg.status();
 
