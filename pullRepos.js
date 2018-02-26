@@ -212,14 +212,14 @@ async function _pullRepoIfNotAhead(sg, status) {
   }
 
   if (!status.ahead && isLocalClean(status)) {
-    return sg.pull();
+    return sg.pull(null, null, { '--stat': null, '--all': null });
   }
 
   await commitWIPIfUnclean(sg, status);
 
   const rebase = { success: false };
   try {
-    rebase.result = await sg.pull(null, null, { '--rebase' : null, '--stat': null });
+    rebase.result = await sg.pull(null, null, { '--rebase' : null, '--stat': null, '--all': null });
     rebase.success = true;
   } catch (err) {
     await sg.rebase({ '--abort' : null });
