@@ -17,6 +17,8 @@ const repos     = (config.repos || '').split(',');
 const branches  = (config.branches || '').split(',');
 
 const defaultBranches = new Map();
+let currentGcExecution = null;
+
 for (const repoBranch of branches) {
   const [repo, branch] = repoBranch.split(':');
   defaultBranches.set(repo, branch);
@@ -150,7 +152,7 @@ function handleErr(err) {
   process.exit(-1);
 }
 
-async function processRepo(repo, retry = 1) {
+async function processRepo(repo) {
   const startTs = new Date();
   const result = {};
   try {
@@ -171,7 +173,14 @@ async function doProcessRepo(repo) {
   debug.enabled && debug(`Processing repository ${repo}...`);
   const sg = initSimpleGit(repo);
 
-  await sg.fetch(['--all']);
+  try {
+    await sg.fetch(['--all']);
+  } catch (err) {
+    debug.enabled && debug(`Fetch failed in ${repo}, will call GC and try again...`);
+
+    await runOneGC(sg);
+    await sg.fetch(['--all']);
+  }
 
   const initialStatus = await sg.status();
 
@@ -186,6 +195,17 @@ async function doProcessRepo(repo) {
   }
 
   return { repo, pull, status, stash };
+}
+
+async function runOneGC(sg) {
+  if (currentGcExecution) {
+    await currentGcExecution;
+    return runOneGC(sg);
+  }
+
+  currentGcExecution = sg.raw(['gc', '--prune=now']);
+  await currentGcExecution;
+  currentGcExecution = null;
 }
 
 function initSimpleGit(repo) {
