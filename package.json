@@ -4,6 +4,7 @@
   "description": "Pull multiple git repositories",
   "main": "pullRepos.js",
   "scripts": {
+    "lint": "eslint '**/*.js'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,6 +28,6 @@
     "simple-git": "1.85.0"
   },
   "devDependencies": {
-    "eslint": "^4.18.0"
+    "eslint": "^4.18.1"
   }
 }
