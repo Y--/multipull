@@ -13,8 +13,8 @@ const simpleGit = require('simple-git/promise');
 
 const config    = rc(appName);
 const rootDir   = config.root;
-const repos     = (config.repos || '').split(',');
-const branches  = (config.branches || '').split(',');
+const repos     = distinctList(config.repos);
+const branches  = distinctList(config.branches);
 
 const defaultBranches = new Map();
 let currentGcExecution = null;
@@ -120,6 +120,11 @@ CliTable.prototype.removeEmptyColumns = function() {
     console.error(`[${e.repo}]: ${e.error}`);
   }
 })();
+
+function distinctList(s) {
+  if (!s) { return []; }
+  return Array.from(new Set(s.split(',')));
+}
 
 function differentOrEmpty(actual, common) {
   return actual === common ? '' : (actual || '*** none ***');
