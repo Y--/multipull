@@ -110,7 +110,7 @@ CliTable.prototype.removeEmptyColumns = function() {
   }
 
   const elapsed = new Date() - startTs;
-  console.log(`Checked ${repos.length} repositories in : ${elapsed / 1000}s`);
+  console.log(`Checked ${repos.length} repositories in : ${elapsed / 1000}s @ ${new Date().toString()}`);
 
   if (errors.length) {
     console.error(`${errors.length} error(s) occured while pulling repos :`);
