@@ -3,8 +3,7 @@
 /* eslint-disable no-console */
 const appName = 'multipull';
 const startTs = new Date();
-
-const CliTable  = require('cli-table');
+const CleanTable = require('./lib/clean-table');
 const debug     = require('debug')(appName);
 const path      = require('path');
 const Progress  = require('progress');
@@ -34,36 +33,10 @@ const progress  = new Progress(':bar :percent :elapsed', {
 
 debug.enabled && debug(`Will process ${repos.join(', ')} repos in ${config.root}.`);
 
-// TODO : implement it properly and make a PR.
-CliTable.prototype.removeEmptyColumns = function() {
-  if (!this.length) { return; }
-
-  const nbColumns  = this[0][Object.keys(this[0])[0]].length;
-  const isColEmpty = new Array(nbColumns).fill(true);
-  for (const row of this) {
-    const header = Object.keys(row)[0];
-    for (const [i, cell] of row[header].entries()) {
-      isColEmpty[i] = isColEmpty[i] && (cell === '' || cell === null || cell === undefined);
-    }
-  }
-
-  const idxToRemove = new Set(isColEmpty.map((x, i) => x ? i : null).filter(x => x !== null));
-  const filterFunc  = (x, i) => !idxToRemove.has(i);
-
-  for (const row of this) {
-    const header = Object.keys(row)[0];
-    row[header]  = row[header].filter(filterFunc);
-  }
-
-  const shifted     = this.options.head.shift();
-  this.options.head = this.options.head.filter(filterFunc);
-  this.options.head.unshift(shifted);
-};
-
 (async function main() {
   const res = await Promise.all(repos.map(processRepo));
   const head  = ['', 'Current', 'Tracking', 'S', '??', 'M', 'D', 'A', 'C', 'Files', 'Changes', 'Insertions', 'Deletions', 'E'];
-  const table = new CliTable({ head });
+  const table = new CleanTable({ head });
 
   const errors = [];
   for (const [i, repo] of repos.entries()) {
