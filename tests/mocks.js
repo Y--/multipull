@@ -17,5 +17,12 @@ for (const funcName of Object.keys(simpleGit.prototype)) {
 const gitHelper = require('../lib/helpers/simple-git');
 gitHelper.initSimpleGit = () => sg;
 
+const utils = {
+  exec: jest.fn(),
+  getYNAnswer: jest.fn()
+};
+
+Object.assign(require('../lib/helpers/utils'), utils);
+
 const logger = require('../lib/helpers/logger');
-exports.mocks = { debug: mockDebug, logger, progress: { tick: mockProgressTick }, sg };
+exports.mocks = { debug: mockDebug, utils, logger, progress: { tick: mockProgressTick }, sg };
