@@ -26,6 +26,28 @@ describe('Processor', () => {
     expectValidResults(results);
   });
 
+  it('should evaluate the title function', async () => {
+    const mockRunner = jest.fn((context, repoName) => 'result for ' + repoName);
+    const processor = new Processor(fixtureContext, [
+      { runner: mockRunner, title: (context) => 'Task in ' + context.rootDir }
+    ]);
+
+    expect(mocks.progress.tick.mock.calls).toHaveLength(0);
+    const results = await processor.run();
+
+    const fixtureReposCount = 3;
+
+    expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
+    expectMockRunner(mockRunner);
+    expectValidResults(results);
+    expect(mocks.logger.logInfo.mock.calls).toEqual([[`Task in ${fixtureContext.rootDir}`]]);
+  });
+
+
+  it('should return an error if the spec is invalid', async () => {
+    expect(() => new Processor(fixtureContext, 42)).toThrowError(/Invalid specification: 42/);
+  });
+
   it('should run a processor with multiple steps', async () => {
     const mockRunner1 = jest.fn((context, repoName) => 'step1 for ' + repoName);
     const mockRunner2 = jest.fn((context, repoName) => 'result for ' + repoName);
