@@ -1,6 +1,8 @@
-const Context = require('../lib/helpers/context');
-const Processor = require('../lib/helpers/processor');
-const logger = require('../lib/helpers/logger');
+const HELPERS_DIR = '../../lib/helpers/';
+
+const Context = require(HELPERS_DIR + 'context');
+const Processor = require(HELPERS_DIR + 'processor');
+const logger = require(HELPERS_DIR + 'logger');
 
 const repoIdRe = /repo-[0-9]+/;
 const fixtureContext = createFixtureContext();
@@ -8,10 +10,7 @@ const fixtureReposCount = 3;
 
 const mockProgressTick = jest.fn();
 jest.mock('progress', () => jest.fn().mockImplementation(() => ({ tick: mockProgressTick })));
-jest.mock('../lib/helpers/logger');
-
-beforeEach(() => jest.clearAllMocks());
-
+jest.mock('../../lib/helpers/logger');
 
 test('creates a processor', () => {
   new Processor(fixtureContext, () => {});
