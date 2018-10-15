@@ -9,9 +9,14 @@ exports.createFixtureContext = function(repos)  {
   });
 };
 
+const scenarios = [{ debug: true }, { debug: false }];
+
 exports.setupTests = function(testSuiteFactory) {
-  testSuiteFactory(...genHooks({ debug: true }));
-  testSuiteFactory(...genHooks({ debug: false }));
+  for (const scenario of scenarios) {
+    describe(`With ${JSON.stringify(scenario)}`, () => {
+      testSuiteFactory(...genHooks(scenario));
+    });
+  }
 };
 
 function genHooks(params) {
