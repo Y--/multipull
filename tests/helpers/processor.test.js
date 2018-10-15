@@ -69,6 +69,34 @@ test('run interrupt processor if an error occurs during a step', async () => {
   expect(mockRunner2.mock.calls).toHaveLength(0);
 });
 
+test('run a processor with multiple a single step', async () => {
+  const mockRunner1 = jest.fn((context, repoName) => 'step1 for ' + repoName);
+  const mockSingle  = jest.fn(() => 'single');
+  const mockRunner2 = jest.fn((context, repoName) => 'result for ' + repoName);
+  const processor = new Processor(fixtureContext, [
+    { runner: mockRunner1, title: 'Step 1' },
+    { runner: mockSingle,  title: 'Single', single: true },
+    { runner: mockRunner2, title: 'Step 2' }
+  ]);
+
+  expect(mocks.progress.tick.mock.calls).toHaveLength(0);
+  const results = await processor.run();
+
+  expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1'], ['Single'], ['Step 2']]);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(2 * (fixtureReposCount + 1));
+  expectMockRunner(mockRunner1);
+  expectMockRunner(mockRunner2);
+
+
+  expect(mockSingle.mock.calls).toHaveLength(1);
+  for (const callArgs of mockSingle.mock.calls) {
+    expect(callArgs).toHaveLength(1);
+    expect(callArgs[0]).toEqual(fixtureContext);
+  }
+
+  expectValidResults(results);
+});
+
 function expectMockRunner(mockRunner) {
   expect(mockRunner.mock.calls).toHaveLength(fixtureReposCount);
 
