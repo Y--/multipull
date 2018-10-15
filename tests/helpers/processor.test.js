@@ -102,6 +102,32 @@ describe('Processor', () => {
 
     expectValidResults(results);
   });
+
+  it('interrupt processor manually', async () => {
+    const mockRunner1 = jest.fn((context, repoName) => {
+      if (repoName === 'repo-42') {
+        context.interrupt();
+      }
+      return 'result for ' + repoName;
+    });
+
+    const mockRunner2 = jest.fn((context, repoName) => 'not for ' + repoName);
+    const processor = new Processor(fixtureContext, [
+      { runner: mockRunner1, title: 'Step 1' },
+      { runner: mockRunner2, title: 'Step 2' }
+    ]);
+
+    expect(mocks.progress.tick.mock.calls).toHaveLength(0);
+    const results = await processor.run();
+
+    expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
+    expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
+    expectMockRunner(mockRunner1);
+
+    expect(mockRunner2.mock.calls).toHaveLength(0);
+
+    expectValidResults(results);
+  });
 });
 
 function expectMockRunner(mockRunner) {
