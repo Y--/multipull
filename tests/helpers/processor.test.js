@@ -1,32 +1,27 @@
-const HELPERS_DIR = '../../lib/helpers/';
-
-const Context = require(HELPERS_DIR + 'context');
-const Processor = require(HELPERS_DIR + 'processor');
-const logger = require(HELPERS_DIR + 'logger');
+const { mocks } = require('../mocks');
+const { createFixtureContext } = require('../utils');
+const Processor = require('../../lib/helpers/processor');
 
 const repoIdRe = /repo-[0-9]+/;
-const fixtureContext = createFixtureContext();
 const fixtureReposCount = 3;
+const fixtureContext = createFixtureContext('repo-1,repo-42,repo-84');
 
-const mockProgressTick = jest.fn();
-jest.mock('progress', () => jest.fn().mockImplementation(() => ({ tick: mockProgressTick })));
-jest.mock('../../lib/helpers/logger');
 
 test('creates a processor', () => {
   new Processor(fixtureContext, () => {});
-  expect(mockProgressTick.mock.calls).toHaveLength(0);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 });
 
 test('run a processor with a simple runner function', async () => {
   const mockRunner = jest.fn((context, repoName) => 'result for ' + repoName);
   const processor = new Processor(fixtureContext, mockRunner);
 
-  expect(mockProgressTick.mock.calls).toHaveLength(0);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(0);
   const results = await processor.run();
 
   const fixtureReposCount = 3;
 
-  expect(mockProgressTick.mock.calls).toHaveLength(fixtureReposCount + 1);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
   expectMockRunner(mockRunner);
   expectValidResults(results);
 });
@@ -39,11 +34,11 @@ test('run a processor with multiple steps', async () => {
     { runner: mockRunner2, title: 'Step 2' }
   ]);
 
-  expect(mockProgressTick.mock.calls).toHaveLength(0);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(0);
   const results = await processor.run();
 
-  expect(logger.logInfo.mock.calls).toEqual([['Step 1'], ['Step 2']]);
-  expect(mockProgressTick.mock.calls).toHaveLength(2 * (fixtureReposCount + 1));
+  expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1'], ['Step 2']]);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(2 * (fixtureReposCount + 1));
   expectMockRunner(mockRunner1);
   expectMockRunner(mockRunner2);
   expectValidResults(results);
@@ -63,13 +58,13 @@ test('run interrupt processor if an error occurs during a step', async () => {
     { runner: mockRunner2, title: 'Step 2' }
   ]);
 
-  expect(mockProgressTick.mock.calls).toHaveLength(0);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 
   await expect(processor.run()).rejects.toThrowError(/Aborting execution because of 1 error in repo-42/);
 
-  expect(logger.logInfo.mock.calls).toEqual([['Step 1']]);
+  expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
 
-  expect(mockProgressTick.mock.calls).toHaveLength(fixtureReposCount + 1);
+  expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
   expectMockRunner(mockRunner1);
   expect(mockRunner2.mock.calls).toHaveLength(0);
 });
@@ -93,12 +88,4 @@ function expectValidResults(results) {
     expect(result.res).toEqual('result for ' + result.repo);
     expect(result.elapsed).toBeGreaterThanOrEqual(0);
   }
-}
-
-function createFixtureContext() {
-  return new Context('test-multipull', {
-    branches: '',
-    root: '/my/root/folder',
-    repos: 'repo-1,repo-42,repo-84'
-  });
 }
