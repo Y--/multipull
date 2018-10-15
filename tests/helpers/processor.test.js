@@ -44,7 +44,7 @@ describe('Processor', () => {
     expectValidResults(results);
   });
 
-  it('should interrupt processor if an error occurs during a step', async () => {
+  it('should interrupt processor if an error occurs during a parallel step', async () => {
     const mockRunner1 = jest.fn((context, repoName) => {
       if (repoName === 'repo-42') {
         throw new Error('Failed');
@@ -66,6 +66,25 @@ describe('Processor', () => {
 
     expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
     expectMockRunner(mockRunner1);
+    expect(mockRunner2.mock.calls).toHaveLength(0);
+  });
+
+  it('should interrupt processor if an error occurs during a single step', async () => {
+    const mockRunner1 = jest.fn(() => { throw new Error('Failed'); });
+    const mockRunner2 = jest.fn((context, repoName) => repoName);
+    const processor = new Processor(fixtureContext, [
+      { runner: mockRunner1, title: 'Step 1', single: true },
+      { runner: mockRunner2, title: 'Step 2' }
+    ]);
+
+    expect(mocks.progress.tick.mock.calls).toHaveLength(0);
+
+    await expect(processor.run()).rejects.toThrowError(/Aborting execution:/);
+
+    expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
+
+    expect(mocks.progress.tick.mock.calls).toHaveLength(0);
+    expect(mockRunner1.mock.calls).toHaveLength(1);
     expect(mockRunner2.mock.calls).toHaveLength(0);
   });
 
