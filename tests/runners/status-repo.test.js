@@ -21,6 +21,14 @@ testGetStatus('call git status on a branch ahead of master',             '>hash-
 testGetStatus('call git status on a branch behind master',               '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
 testGetStatus('call git status on a branch that diverged from master',   '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
 
+test('the stash count is 0 by default', async () => {
+  mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+  mocks.sg.stashList.mockImplementationOnce(() => ({}));
+
+  const res = await statusRepo(fixtureContext, REPO_NAME);
+  expect(res).toEqual({ status: { current: 'master' }, stash: { total: 0 } });
+});
+
 function testGetStatus(title, revListResult, expectedDiffWithMaster) {
   test(title, async () => {
     mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
@@ -41,11 +49,3 @@ function testGetStatus(title, revListResult, expectedDiffWithMaster) {
     });
   });
 }
-
-test('the stash count is 0 by default', async () => {
-  mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
-  mocks.sg.stashList.mockImplementationOnce(() => ({}));
-
-  const res = await statusRepo(fixtureContext, REPO_NAME);
-  expect(res).toEqual({ status: { current: 'master' }, stash: { total: 0 } });
-});
