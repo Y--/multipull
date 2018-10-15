@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint '**/*.js'",
     "release": "npm version patch && npm publish",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,8 @@
     "simple-git": "^1.105.0"
   },
   "devDependencies": {
-    "eslint": "^5.6.1"
+    "eslint": "^5.6.1",
+    "eslint-plugin-jest": "^21.25.0",
+    "jest": "^23.6.0"
   }
 }
