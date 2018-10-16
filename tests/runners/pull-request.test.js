@@ -59,17 +59,23 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
       });
 
-      it('Should look for the current branch and refuse if it is not master', async () => {
-        mocks.utils.exec
-          .mockImplementationOnce(() => ({ stdout: 'git@github.com:username/repo-84.git' }))
-          .mockImplementationOnce(() => ({ stdout: 'foo-branch' }));
+      [
+        'git@github.com:username/repo-84.git',
+        'git@github.com:username/repo-84.git\n',
+        'git@github.com:username/repo-84',
+        'git@github.com:username/repo-84\n',
+      ].forEach((lsRemoteResult) => {
+        it(`Should proceed if git ls-remote returns ${lsRemoteResult}`, async () => {
+          mocks.utils.exec
+            .mockImplementationOnce(() => ({ stdout: lsRemoteResult }))
+            .mockImplementationOnce(() => ({ stdout: 'foo-branch' }));
 
-        await runner(fixtureContext);
+          await runner(fixtureContext);
 
-        expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
-        expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
+          expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
+          expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
+        });
       });
-
 
       it('Should throw an error if the branch is master', async () => {
         fixtureContext.workingBranch = 'master';
