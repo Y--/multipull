@@ -61,7 +61,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(res).toEqual({ status, stash, pushed: expectedPushed });
 
-        expect(mocks.sg.status.mock.calls).toEqual([[], []]);
+        expect(mocks.sg.status.mock.calls).toEqual([[]]);
         expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
         expect(mocks.sg.push.mock.calls).toEqual(expectedPushCall ? [[expectedPushCall]] : []);
         expectDebugCalls();
