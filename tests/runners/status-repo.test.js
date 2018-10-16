@@ -10,7 +10,7 @@ function testSuiteFactory(setupHooks, testParams) {
   describe('Status', () => {
     setupHooks();
 
-    test('call git status on master', async () => {
+    it('call git status on master', async () => {
       mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
       mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
 
@@ -21,6 +21,9 @@ function testSuiteFactory(setupHooks, testParams) {
         stash: { all: [], latest: null, total: 0 }
       });
 
+      expect(mocks.sg.status.mock.calls).toEqual([[]]);
+      expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+
       expectDebugCalls();
     });
 
@@ -29,19 +32,22 @@ function testSuiteFactory(setupHooks, testParams) {
     testGS('call git status on a branch behind master',               '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
     testGS('call git status on a branch that diverged from master',   '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
 
-    test('the stash count is 0 by default', async () => {
+    it('the stash count is 0 by default', async () => {
       mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
       mocks.sg.stashList.mockImplementationOnce(() => ({}));
 
       const res = await statusRepo(fixtureContext, REPO_NAME);
       expect(res).toEqual({ status: { current: 'master' }, stash: { total: 0 } });
 
+      expect(mocks.sg.status.mock.calls).toEqual([[]]);
+      expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+
       expectDebugCalls();
     });
   });
 
   function testGS(title, revListResult, expectedDiffWithMaster) {
-    test(title, async () => {
+    it(title, async () => {
       mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
 
       mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
@@ -56,8 +62,12 @@ function testSuiteFactory(setupHooks, testParams) {
       const res = await statusRepo(fixtureContext, REPO_NAME);
       expect(res).toEqual({
         status: { current: 'foo-branch', diff_with_origin_master: expectedDiffWithMaster },
-        stash: { all: [], latest: null, total: 0 },
+        stash: { all: [], latest: null, total: 0 }
       });
+
+      expect(mocks.sg.status.mock.calls).toEqual([[]]);
+      expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+      expect(mocks.sg.raw.mock.calls).toEqual([[['rev-list', '--left-right', 'origin/master...foo-branch']]]);
 
       expectDebugCalls();
     });
