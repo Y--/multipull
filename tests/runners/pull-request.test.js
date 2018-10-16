@@ -66,7 +66,8 @@ function testSuiteFactory(setupHooks, testParams) {
         'git@github.com:username/repo-84',
         'git@github.com:username/repo-84\n',
       ].forEach((lsRemoteResult) => {
-        it(`Should proceed if git ls-remote returns ${lsRemoteResult}`, async () => {
+        it(`Should proceed if git ls-remote returns "${lsRemoteResult}"`, async () => {
+          expect(fixtureContext.getWorkingBranch()).toEqual('');
           mocks.utils.exec
             .mockImplementationOnce(() => ({ stdout: lsRemoteResult }))
             .mockImplementationOnce(() => ({ stdout: 'foo-branch\n' }));
@@ -75,6 +76,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
           expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
+          expect(fixtureContext.getWorkingBranch()).toEqual('foo-branch');
         });
       });
 
