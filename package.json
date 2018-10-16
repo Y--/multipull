@@ -23,6 +23,7 @@
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
     "cli-table": "Automattic/cli-table#b9ebd7570e20d885b7455c696d8fd2fcaa3c503f",
+    "colors": "^1.3.2",
     "debug": "^4.1.0",
     "progress": "^2.0.0",
     "rc": "^1.2.7",
