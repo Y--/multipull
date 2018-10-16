@@ -89,11 +89,34 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('Checkout', () => {
+    describe('Find candidates repositories', () => {
+      const { runner } = checkoutStep;
       it('The title should indicate the current branch', () => {
         fixtureContext.workingBranch = 'foo-branch';
         const actualTitle = checkoutStep.title(fixtureContext);
         expect(actualTitle).toMatch(/foo-branch/);
+      });
+
+      it('Should return true if "git rev-parse --verify" succeed', async () => {
+        fixtureContext.workingBranch = 'foo-branch';
+        mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'some-hash', stderr: '' }));
+
+        const res = await runner(fixtureContext, 'repo-84');
+        expect(res).toEqual(true);
+
+        const expectedCwd = fixtureContext.rootDir + '/repo-84';
+        expect(mocks.utils.exec.mock.calls).toEqual([['git rev-parse --verify foo-branch', { cwd: expectedCwd }]]);
+      });
+
+      it('Should return false if "git rev-parse --verify" fails', async () => {
+        fixtureContext.workingBranch = 'foo-branch';
+        mocks.utils.exec.mockImplementationOnce(() => { throw new Error(); });
+
+        const res = await runner(fixtureContext, 'repo-84');
+        expect(res).toEqual(false);
+
+        const expectedCwd = fixtureContext.rootDir + '/repo-84';
+        expect(mocks.utils.exec.mock.calls).toEqual([['git rev-parse --verify foo-branch', { cwd: expectedCwd }]]);
       });
     });
 
@@ -233,7 +256,7 @@ function testSuiteFactory(setupHooks, testParams) {
   }
 
   function genCheckoutResult(repo, current) {
-    return { res: { status: { current } }, repo };
+    return { res: current === 'foo-branch', repo };
   }
 
   function genStatusResult() {
