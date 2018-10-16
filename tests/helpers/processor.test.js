@@ -8,7 +8,7 @@ const fixtureContext = createFixtureContext('repo-1,repo-42,repo-84');
 
 setupTests(testSuiteFactory);
 
-function testSuiteFactory(setupHooks, testParams) {
+function testSuiteFactory(setupHooks) {
   describe('Processor', () => {
     setupHooks();
 
