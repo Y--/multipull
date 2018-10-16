@@ -29,7 +29,7 @@
     "simple-git": "^1.105.0"
   },
   "devDependencies": {
-    "eslint": "^5.6.1",
+    "eslint": "^5.7.0",
     "eslint-plugin-jest": "^21.25.0",
     "jest": "^23.6.0",
     "prettier": "^1.14.3"
