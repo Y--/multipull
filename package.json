@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "./node_modules/.bin/eslint '**/*.js'",
     "release": "npm version patch && npm publish",
-    "test": "jest"
+    "test": "./node_modules/.bin/jest"
   },
   "repository": {
     "type": "git",
