@@ -19,7 +19,8 @@ gitHelper.initSimpleGit = () => sg;
 
 const mockedUtils = {
   exec: jest.fn(),
-  getYNAnswer: jest.fn()
+  getYNAnswer: jest.fn(),
+  pickRandom: jest.fn()
 };
 
 const utils = require('../lib/helpers/utils');

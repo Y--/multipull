@@ -150,21 +150,54 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.utils.exec.mock.calls).toEqual([]);
       });
 
-      it('Should call `hub pull-request` with the right directory', async () => {
-        fixtureContext.pullRequestRepos = new Set(['repo-84']);
+      [
+        {
+          contextParams: {},
+          expectHubArgs: '--no-edit' },
+        {
+          contextParams: { reviewer:  'boss' },
+          expectHubArgs: '--no-edit --reviewer=boss'
+        },
+        {
+          contextParams: { reviewers: 'rev1,rev2' },
+          expectHubArgs: '--no-edit --reviewer=rev1,rev2',
+          expectPickRandom: true
+        },
+        {
+          contextParams: { reviewer:  'boss', reviewers: 'rev1,rev2' },
+          expectHubArgs: '--no-edit --reviewer=boss',
+        }
+      ].forEach(({ expectHubArgs, contextParams, expectPickRandom = false }) => {
+        it(`Should call 'hub pull-request '${expectHubArgs}' when provided with ${JSON.stringify(contextParams)}`, async () => {
+          const context = createFixtureContext('repo-84');
+          Object.assign(context.config, contextParams);
+          context.pullRequestRepos = new Set(['repo-84']);
 
-        mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'Done.', stderr: '' }));
+          mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'Done.', stderr: '' }));
 
-        const result = await runner(fixtureContext, 'repo-84');
+          if (contextParams.reviewers) {
+            const res = contextParams.reviewers.split(',').slice(0, 2);
+            mocks.utils.pickRandom.mockImplementationOnce(() => res);
+          }
 
-        const expectedResult = genStatusResult();
-        expectedResult.pushed = 'Done.';
-        expect(result).toEqual(expectedResult);
+          const result = await runner(context, 'repo-84');
 
-        const expectedCwd = fixtureContext.rootDir + '/repo-84';
-        expect(mocks.utils.exec.mock.calls).toEqual([['hub pull-request --no-edit', { cwd: expectedCwd }]]);
+          const expectedResult = genStatusResult();
+          expectedResult.pushed = 'Done.';
+          expect(result).toEqual(expectedResult);
 
-        expectDebugCalls();
+          const expectedCwd = context.rootDir + '/repo-84';
+          expect(mocks.utils.exec.mock.calls).toEqual([['hub pull-request ' + expectHubArgs, { cwd: expectedCwd }]]);
+
+          if (expectPickRandom) {
+            const col = contextParams.reviewers.split(',');
+            expect(mocks.utils.pickRandom.mock.calls).toEqual([[col, 2]]);
+          } else {
+            expect(mocks.utils.pickRandom.mock.calls).toEqual([]);
+          }
+
+          expectDebugCalls();
+        });
       });
 
       it('Should throw an error if an issue occurs', async () => {
