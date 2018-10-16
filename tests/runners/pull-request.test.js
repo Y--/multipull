@@ -2,7 +2,7 @@ const { mocks } = require('../mocks');
 const { createFixtureContext, setupTests } = require('../utils');
 const pullRequestRunnerSpec = require('../../lib/runners/pull-request');
 
-const fixtureContext = createFixtureContext('repo-01,repo-42,repo84,repo-10');
+const fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
 
 const [validateParameters, checkoutStep, selectRepositories, prCreation] = pullRequestRunnerSpec;
 
@@ -20,18 +20,65 @@ function testSuiteFactory(setupHooks, testParams) {
 
     describe('Parameters validation', () => {
       const { runner } = validateParameters;
-      it('Should throw an error if the branch is not defined', () => {
-        expect(() => runner(fixtureContext)).toThrowError(/Usage/);
+
+      it('Should throw an error if the branch is not defined', async () => {
+        await expect(runner(fixtureContext)).rejects.toThrowError(/Usage/);
       });
 
-      it('Should throw an error if the branch is master', () => {
+      [{
+        title: 'Should look for the current branch and not find anything if it is not a git repository',
+        lsRemoteResult: { stderr: 'fatal: No remote configured to list refs from.' }
+      }, {
+        title: 'Should look not find the branch if git ls-remote does not return the right url (1)',
+        lsRemoteResult: { stdout: 'not an url' }
+      }, {
+        title: 'Should look not find the branch if git ls-remote does not return the right url (2)',
+        lsRemoteResult: { stdout: 'not an url/' }
+      }, {
+        title: 'Should look not find the branch if it is not among the defined repositories',
+        lsRemoteResult: { stdout: 'git@github.com:username/reponame' }
+      }, {
+        title: 'Should look not find the branch if it is not among the defined repositories',
+        lsRemoteResult: { stdout: 'git@github.com:username/otherrepo.git' }
+      }].forEach((scenario) => {
+
+        it(scenario.title, async () => {
+          mocks.utils.exec.mockImplementationOnce(() => scenario.lsRemoteResult);
+
+          await expect(runner(fixtureContext)).rejects.toThrowError(/Usage/);
+          expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url']]);
+        });
+      });
+
+      it('Should look for the current branch and refuse if it is master', async () => {
+        mocks.utils.exec
+          .mockImplementationOnce(() => ({ stdout: 'git@github.com:username/repo-84.git' }))
+          .mockImplementationOnce(() => ({ stdout: 'master' }));
+
+        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'master'/);
+        expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
+      });
+
+      it('Should look for the current branch and refuse if it is not master', async () => {
+        mocks.utils.exec
+          .mockImplementationOnce(() => ({ stdout: 'git@github.com:username/repo-84.git' }))
+          .mockImplementationOnce(() => ({ stdout: 'foo-branch' }));
+
+        await runner(fixtureContext);
+
+        expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
+        expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
+      });
+
+
+      it('Should throw an error if the branch is master', async () => {
         fixtureContext.workingBranch = 'master';
-        expect(() => runner(fixtureContext)).toThrowError(/Refusing to create a PR on 'master'/);
+        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'master'/);
       });
 
-      it('Should say that it will processed if the parameters are correct', () => {
+      it('Should say that it will processed if the parameters are correct', async () => {
         fixtureContext.workingBranch = 'foo-branch';
-        runner(fixtureContext);
+        await runner(fixtureContext);
         expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
       });
     });
