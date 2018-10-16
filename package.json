@@ -4,7 +4,7 @@
   "description": "Pull multiple git repositories",
   "main": "pullRepos.js",
   "scripts": {
-    "lint": "eslint '**/*.js'",
+    "lint": "./node_modules/.bin/eslint '**/*.js'",
     "release": "npm version patch && npm publish",
     "test": "jest"
   },
