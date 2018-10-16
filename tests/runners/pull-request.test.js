@@ -59,6 +59,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
       });
 
+      const boldBranch = '\u001b[1mfoo-branch\u001b[22m';
       [
         'git@github.com:username/repo-84.git',
         'git@github.com:username/repo-84.git\n',
@@ -72,7 +73,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           await runner(fixtureContext);
 
-          expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
+          expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
           expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
         });
       });
@@ -85,7 +86,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should say that it will processed if the parameters are correct', async () => {
         fixtureContext.workingBranch = 'foo-branch';
         await runner(fixtureContext);
-        expect(mocks.logger.logInfo.mock.calls).toEqual([['Will create pull requests on foo-branch.']]);
+        expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
       });
     });
 
