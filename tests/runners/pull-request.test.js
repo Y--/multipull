@@ -69,7 +69,7 @@ function testSuiteFactory(setupHooks, testParams) {
         it(`Should proceed if git ls-remote returns ${lsRemoteResult}`, async () => {
           mocks.utils.exec
             .mockImplementationOnce(() => ({ stdout: lsRemoteResult }))
-            .mockImplementationOnce(() => ({ stdout: 'foo-branch' }));
+            .mockImplementationOnce(() => ({ stdout: 'foo-branch\n' }));
 
           await runner(fixtureContext);
 
