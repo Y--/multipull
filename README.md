@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Y--/multipull.svg?branch=master)](https://travis-ci.org/Y--/multipull)
+
 # multipull - pull multiple git repositories
 
 ## Install
