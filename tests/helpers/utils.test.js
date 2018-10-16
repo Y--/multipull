@@ -72,7 +72,7 @@ function testSuiteFactory(setupHooks) {
         { input: 'n',    output: false },
         { input: 'N',    output: false },
         { input: 'nay',  output: false },
-        { input: 'No',   output: false },
+        { input: 'No',   output: false }
       ].forEach(({ input, output }) => {
         it(`should return ${output} when the user types "${input}"`, async () => {
           rlMock.question.mockImplementationOnce((question, done) => done(input));
@@ -95,6 +95,47 @@ function testSuiteFactory(setupHooks) {
           .mockImplementationOnce((question, done) => done('n'));
         const actualResult = await utils.getYNAnswer('my question');
         expect(actualResult).toEqual(false);
+      });
+
+    });
+
+    describe('pickRandom', () => {
+      const originalRandom = Math.random;
+      const mathRandomMock = jest.fn();
+      beforeEach(() => Math.random = mathRandomMock);
+      afterEach(() => Math.random = originalRandom);
+
+      const eps = 1E-3;
+
+      [
+        { collection: [1,2,3], count: 1, randomValues: [1/3 - eps],            expectedResults: [1]    },
+        { collection: [1,2,3], count: 1, randomValues: [2/3 - eps],            expectedResults: [2]    },
+        { collection: [1,2,3], count: 1, randomValues: [1   - eps],            expectedResults: [3]    },
+        { collection: [1,2,3], count: 2, randomValues: [1/3 - eps, 1/2 - eps], expectedResults: [1,2]  },
+        { collection: [1,2,3], count: 2, randomValues: [2/3 - eps, 1   - eps], expectedResults: [2,3]  },
+        { collection: [1,2,3], count: 2, randomValues: [1   - eps, 1/2 - eps], expectedResults: [3,1]  },
+      ].forEach(({ collection, count, randomValues, expectedResults }) => {
+        const ret = `return ${JSON.stringify(expectedResults)}`;
+        it(`should ${ret} when selecting ${count} in ${JSON.stringify(collection)} "`, async () => {
+          for (const val of randomValues) {
+            mathRandomMock.mockImplementationOnce(() => val);
+          }
+
+          const actualResult = utils.pickRandom(collection, count);
+          expect(actualResult).toEqual(expectedResults);
+        });
+      });
+
+      it('should throw an error if the collection have no element', async () => {
+        expect(() => utils.pickRandom([], 1)).toThrowError(/Cannot select 1 element: collection has only 0 element/);
+      });
+
+      it('should throw an error if the collection does not have enough elements', async () => {
+        expect(() => utils.pickRandom([42], 2)).toThrowError(/Cannot select 2 elements: collection has only 1 element/);
+      });
+
+      it('should throw an error if the count is not a number', async () => {
+        expect(() => utils.pickRandom([], 'hello')).toThrowError(/Invalid count: hello/);
       });
 
     });
