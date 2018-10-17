@@ -3,7 +3,7 @@
   <a href="https://codecov.io/gh/Y--/multipull"><img src="https://codecov.io/gh/Y--/multipull/branch/master/graph/badge.svg" alt="Codecov badge"></a>
 </p>
 
-# multipull - pull multiple git repositories
+# multipull - Manage multiple git repositories
 
 ## Install
 
