@@ -1,0 +1,136 @@
+const { mocks } = require('../mocks');
+const { createFixtureContext, setupTests } = require('../utils');
+const pullRepo = require('../../lib/runners/pull-repo');
+
+const REPO_NAME = 'repo-1';
+
+setupTests(testSuiteFactory);
+
+function testSuiteFactory(setupHooks, testParams) {
+  describe('Push', () => {
+    setupHooks();
+
+    [
+      {
+        status: { ahead: 0, behind: 0 },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: null,
+          rebase: null,
+          commit: null,
+          reset: null
+        }
+      },
+      {
+        status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--stat': null }]],
+          rebase: null,
+          commit: null,
+          reset: null
+        }
+      },
+      {
+        status: { ahead: 0, behind: 1, modified: [1], deleted: [], created: [], conflicted: [] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: null,
+          commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
+        }
+      },
+      {
+        status: { ahead: 0, behind: 1, modified: [], deleted: [2], created: [], conflicted: [] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: null,
+          commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
+        }
+      },
+      {
+        status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [3], conflicted: [] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: null,
+          commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
+        }
+      },
+      {
+        status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [4] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: null,
+          commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
+        }
+      },
+      {
+        status: { ahead: 1, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: null,
+          commit: null,
+          reset: null
+        }
+      },
+      {
+        status: { ahead: 1, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
+        pullWillFail: true,
+        expectedPull: { files: ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'], summary: {} },
+        expectedCalls: {
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+          rebase: [[{ '--abort': null }]],
+          commit: null,
+          reset: null
+        }
+      }
+    ].forEach(({ status, pullWillFail, expectedPull, expectedCalls }) => {
+      const suffix = `status is ${JSON.stringify(status)}`;
+      it(`Should return ${JSON.stringify(expectedPull)} when ${suffix}`, async () => {
+        const stash = { all: [], latest: null, total: 0 };
+        mocks.sg.status.mockImplementation(() => status);
+        mocks.sg.stashList.mockImplementationOnce(() => stash);
+
+        if (expectedCalls.pull && pullWillFail) {
+          mocks.sg.pull.mockImplementationOnce(async () => {
+            throw new Error();
+          });
+        } else if (expectedCalls.pull && !pullWillFail) {
+          mocks.sg.pull.mockImplementationOnce(() => expectedPull);
+        }
+
+        const fixtureContext = createFixtureContext(REPO_NAME);
+        const res = await pullRepo(fixtureContext, REPO_NAME);
+
+        expect(res).toEqual({ status, stash, pull: expectedPull });
+
+        expect(mocks.sg.status.mock.calls).toEqual([[], []]);
+        expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+        expect(mocks.sg.pull.mock.calls).toHaveLength(expectedCalls.pull ? 1 : 0);
+
+        for (const handler of ['pull', 'rebase', 'commit', 'reset']) {
+          expect(mocks.sg[handler].mock.calls).toEqual(expectedCalls[handler] || []);
+        }
+        expectDebugCalls();
+      });
+    });
+  });
+
+  function expectDebugCalls() {
+    if (testParams.debug) {
+      expect(mocks.debug.mock.calls).toHaveLength(1);
+      expect(mocks.debug.mock.calls[0]).toHaveLength(1);
+      expect(mocks.debug.mock.calls[0][0]).toEqual('Processing repository repo-1...');
+    } else {
+      expect(mocks.debug.mock.calls).toHaveLength(0);
+    }
+  }
+}

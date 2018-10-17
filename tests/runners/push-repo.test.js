@@ -67,9 +67,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectDebugCalls();
       });
     });
-
   });
-
 
   function expectDebugCalls() {
     if (testParams.debug) {
