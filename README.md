@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/Y--/multipull.svg?branch=master)](https://travis-ci.org/Y--/multipull)
-
-[![codecov](https://codecov.io/gh/Y--/multipull/branch/master/graph/badge.svg)](https://codecov.io/gh/Y--/multipull)
+<p align="center">
+  <a href="https://travis-ci.org/Y--/multipull"><img src="https://travis-ci.org/Y--/multipull.svg?branch=master" alt="Travis Build Status"></a>
+  <a href="https://codecov.io/gh/Y--/multipull"><img src="https://codecov.io/gh/Y--/multipull/branch/master/graph/badge.svg" alt="Codecov badge"></a>
+</p>
 
 # multipull - pull multiple git repositories
 
