@@ -1,12 +1,8 @@
 const Context = require('../lib/helpers/context');
 const { mocks } = require('./mocks');
 
-exports.createFixtureContext = function(repos)  {
-  return new Context('test-multipull', {
-    branches: '',
-    root: '/my/root/folder',
-    repos
-  });
+exports.createFixtureContext = function(repos, branches = '')  {
+  return new Context('test-multipull', { branches, root: '/my/root/folder', repos });
 };
 
 const scenarios = [{ debug: true }, { debug: false }];
