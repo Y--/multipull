@@ -51,6 +51,10 @@ function testSuiteFactory(setupHooks) {
         input: { foo: 'bar' },
         output: '--foo=bar'
       }, {
+        title: 'should serialize string values that have spaces with quote',
+        input: { foo: 'bar baz' },
+        output: '--foo="bar baz"'
+      }, {
         title: 'should serialize complex objects',
         input: { foo: '42', bar: null, baz: true },
         output: '--foo=42 --baz'

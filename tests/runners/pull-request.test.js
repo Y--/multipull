@@ -185,25 +185,26 @@ function testSuiteFactory(setupHooks, testParams) {
       [
         {
           contextParams: {},
-          expectHubArgs: '--no-edit' },
+          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`"' },
         {
           contextParams: { reviewer:  'boss' },
-          expectHubArgs: '--no-edit --reviewer=boss'
+          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=boss'
         },
         {
           contextParams: { reviewers: 'rev1,rev2' },
-          expectHubArgs: '--no-edit --reviewer=rev1,rev2',
+          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=rev1,rev2',
           expectPickRandom: true
         },
         {
           contextParams: { reviewer:  'boss', reviewers: 'rev1,rev2' },
-          expectHubArgs: '--no-edit --reviewer=boss',
+          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=boss',
         }
       ].forEach(({ expectHubArgs, contextParams, expectPickRandom = false }) => {
         it(`Should call 'hub pull-request '${expectHubArgs}' when provided with ${JSON.stringify(contextParams)}`, async () => {
           const context = createFixtureContext('repo-84');
           Object.assign(context.config, contextParams);
           context.pullRequestRepos = new Set(['repo-84']);
+          context.workingBranch = 'foo-branch';
 
           mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'Done.', stderr: '' }));
 
@@ -234,13 +235,15 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should throw an error if an issue occurs', async () => {
         fixtureContext.pullRequestRepos = new Set(['repo-84']);
+        fixtureContext.workingBranch = 'foo-branch';
 
         mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'stdout', stderr: 'stderr' }));
 
         await expect(runner(fixtureContext, 'repo-84')).rejects.toThrowError(/stderr/);
 
         const expectedCwd = fixtureContext.rootDir + '/repo-84';
-        expect(mocks.utils.exec.mock.calls).toEqual([['hub pull-request --no-edit', { cwd: expectedCwd }]]);
+        const expectedCmd = 'hub pull-request --message="PR on `foo-branch` for `repo-84`"';
+        expect(mocks.utils.exec.mock.calls).toEqual([[expectedCmd, { cwd: expectedCwd }]]);
 
         expectDebugCalls();
       });
