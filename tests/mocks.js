@@ -8,6 +8,15 @@ mockDebug.enabled = false;
 
 jest.mock('debug', () => jest.fn().mockImplementation(() => mockDebug));
 
+const mockGHRepo = {
+  updatePullRequest: jest.fn()
+};
+jest.mock('github-api', () => jest.fn().mockImplementation(() => ({
+  getRepo() {
+    return mockGHRepo;
+  }
+})));
+
 const sg = {};
 const simpleGit = require('simple-git/src/git');
 for (const funcName of Object.keys(simpleGit.prototype)) {
@@ -28,7 +37,7 @@ const originalUtils = Object.assign({}, utils);
 useMockedUtils();
 
 const logger = require('../lib/helpers/logger');
-exports.mocks = { debug: mockDebug, utils, logger, progress: { tick: mockProgressTick }, sg };
+exports.mocks = { debug: mockDebug, utils, logger, progress: { tick: mockProgressTick }, sg, ghRepo: mockGHRepo };
 
 exports.useOriginalUtils = function() {
   Object.assign(utils, originalUtils);
@@ -39,3 +48,4 @@ exports.useMockedUtils = useMockedUtils;
 function useMockedUtils() {
   Object.assign(utils, mockedUtils);
 }
+

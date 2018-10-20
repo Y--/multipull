@@ -1,10 +1,11 @@
 const { mocks } = require('../mocks');
 const { createFixtureContext, setupTests } = require('../utils');
 const pullRequestRunnerSpec = require('../../lib/runners/pull-request');
+const colors = require('colors/safe');
 
 const fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
 
-const [validateParameters, checkoutStep, selectRepositories, prCreation] = pullRequestRunnerSpec;
+const [validateParameters, checkoutStep, selectRepositories, prCreation, prBodyGeneration, prBodyUpdate] = pullRequestRunnerSpec;
 
 setupTests(testSuiteFactory);
 
@@ -15,7 +16,8 @@ function testSuiteFactory(setupHooks, testParams) {
     beforeEach(() => {
       fixtureContext.workingBranch = null;
       fixtureContext.interrupted = false;
-      delete fixtureContext.pullRequestRepos;
+      delete fixtureContext.pullRequestsPerRepo;
+      delete fixtureContext.pullRequestBody;
     });
 
     describe('Parameters validation', () => {
@@ -138,7 +140,7 @@ function testSuiteFactory(setupHooks, testParams) {
           genCheckoutResult('repo-10', 'foo-branch')
         ]);
 
-        expect(fixtureContext.pullRequestRepos).toEqual(new Set(['repo-10', 'repo-84']));
+        expect(fixtureContext.pullRequestsPerRepo).toEqual(genRepoMap(['repo-10', 'repo-84']));
         expect(fixtureContext.isInterrupted()).toEqual(false);
         expectLogs([]);
       });
@@ -148,7 +150,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         await runner(fixtureContext, [genCheckoutResult('repo-84', 'master')]);
 
-        expect(fixtureContext.pullRequestRepos).toBeUndefined();
+        expect(fixtureContext.pullRequestsPerRepo).toBeUndefined();
         expect(fixtureContext.isInterrupted()).toEqual(true);
         expectLogs([['Cannot find any repository with branch \'old-branch\'.']]);
       });
@@ -160,7 +162,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         await runner(fixtureContext, [genCheckoutResult('repo-84', 'foo-branch')]);
 
-        expect(fixtureContext.pullRequestRepos).toBeUndefined();
+        expect(fixtureContext.pullRequestsPerRepo).toBeUndefined();
         expect(fixtureContext.isInterrupted()).toEqual(true);
         expectLogs([['Aborted.']]);
       });
@@ -173,12 +175,18 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
       });
 
-      it('Should not call `hub pull-request` if the repo is not in pullRequestRepos', async () => {
-        fixtureContext.pullRequestRepos = new Set(['foo-repo']);
+      it('Should include the repos in the title', () => {
+        fixtureContext.pullRequestsPerRepo = genRepoMap(['repo-84']);
+        const title = prCreation.title(fixtureContext);
+        expect(title).toEqual(`Creating PR in '${colors.bold('repo-84')}'`);
+      });
 
-        const result = await runner(fixtureContext, 'repo-84');
-        expect(result).toEqual(genStatusResult());
+      it('Should not call `hub pull-request` if the repo is not in pullRequestsPerRepo', async () => {
+        fixtureContext.pullRequestsPerRepo = genRepoMap(['foo-repo']);
 
+        await runner(fixtureContext, 'repo-84');
+
+        expect(fixtureContext.pullRequestsPerRepo).toEqual(genRepoMap(['foo-repo']));
         expect(mocks.utils.exec.mock.calls).toEqual([]);
       });
 
@@ -203,7 +211,7 @@ function testSuiteFactory(setupHooks, testParams) {
         it(`Should call 'hub pull-request '${expectHubArgs}' when provided with ${JSON.stringify(contextParams)}`, async () => {
           const context = createFixtureContext('repo-84');
           Object.assign(context.config, contextParams);
-          context.pullRequestRepos = new Set(['repo-84']);
+          context.pullRequestsPerRepo = genRepoMap(['repo-84']);
           context.workingBranch = 'foo-branch';
 
           mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'Done.', stderr: '' }));
@@ -213,11 +221,9 @@ function testSuiteFactory(setupHooks, testParams) {
             mocks.utils.pickRandom.mockImplementationOnce(() => res);
           }
 
-          const result = await runner(context, 'repo-84');
+          await runner(context, 'repo-84');
 
-          const expectedResult = genStatusResult();
-          expectedResult.pushed = 'Done.';
-          expect(result).toEqual(expectedResult);
+          expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', 'Done.']]));
 
           const expectedCwd = context.rootDir + '/repo-84';
           expect(mocks.utils.exec.mock.calls).toEqual([['hub pull-request ' + expectHubArgs, { cwd: expectedCwd }]]);
@@ -234,7 +240,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
 
       it('Should throw an error if an issue occurs', async () => {
-        fixtureContext.pullRequestRepos = new Set(['repo-84']);
+        fixtureContext.pullRequestsPerRepo = new Set(['repo-84']);
         fixtureContext.workingBranch = 'foo-branch';
 
         mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'stdout', stderr: 'stderr' }));
@@ -246,6 +252,51 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.utils.exec.mock.calls).toEqual([[expectedCmd, { cwd: expectedCwd }]]);
 
         expectDebugCalls();
+      });
+    });
+
+    describe('PR body generation', () => {
+      [{
+        pullRequestsPerRepo: new Map(),
+        expectedPullRequestBody: undefined
+      }, {
+        pullRequestsPerRepo: new Map([['foo-repo', 'foo-pr-url']]),
+        expectedPullRequestBody: 'Pull Request on 1 repository:\n* `foo-repo` : [foo-pr-url](foo-pr-url)'
+      }, {
+        pullRequestsPerRepo: new Map([['repo1', 'pr-url-1'], ['repo2', 'pr-url-2']]),
+        expectedPullRequestBody: 'Pull Request on 2 repositories:\n* `repo1` : [pr-url-1](pr-url-1)\n* `repo2` : [pr-url-2](pr-url-2)'
+      }].forEach((scenario) => {
+
+        const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));
+        const expected = scenario.expectedPullRequestBody
+          ? scenario.expectedPullRequestBody.replace(/\n/g, '\\n')
+          : scenario.expectedPullRequestBody;
+        it(`Should generate '${expected}' if repo list is ${pullRequestsPerRepoStr}`, () => {
+          fixtureContext.pullRequestsPerRepo = scenario.pullRequestsPerRepo;
+          prBodyGeneration.runner(fixtureContext);
+          expect(fixtureContext.pullRequestBody).toEqual(scenario.expectedPullRequestBody);
+        });
+      });
+    });
+
+    describe('PR body update', () => {
+      it('Should not update the PR body if the repo is not in the list', async () => {
+        fixtureContext.pullRequestsPerRepo = new Map();
+
+        const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
+        expect(result).toEqual(genStatusResult());
+
+        expect(mocks.sg.listRemote.mock.calls).toEqual([]);
+      });
+
+      it('Should update the PR body if the repo is in the list', async () => {
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        fixtureContext.pullRequestsPerRepo = new Map([['repo-84', 'repo-pr-url/123']]);
+        fixtureContext.pullRequestBody = 'updated body';
+        const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
+
+        expect(result).toEqual(genStatusResult('repo-pr-url/123'));
+        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([['123', {body: fixtureContext.pullRequestBody}]]);
       });
     });
   });
@@ -261,12 +312,20 @@ function testSuiteFactory(setupHooks, testParams) {
     }
   }
 
+  function genRepoMap(repos) {
+    return new Map(repos.map(r => [r, null]));
+  }
+
   function genCheckoutResult(repo, current) {
     return { res: current === 'foo-branch', repo };
   }
 
-  function genStatusResult() {
-    return { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } };
+  function genStatusResult(pushed) {
+    const r = { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } };
+    if (pushed) {
+      r.pushed = pushed;
+    }
+    return r;
   }
 
   function expectLogs(logInfoCalls) {
