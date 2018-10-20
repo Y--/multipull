@@ -9,7 +9,9 @@ mockDebug.enabled = false;
 jest.mock('debug', () => jest.fn().mockImplementation(() => mockDebug));
 
 const mockGHRepo = {
-  updatePullRequest: jest.fn()
+  createPullRequest: jest.fn(),
+  createReviewRequest: jest.fn(),
+  updatePullRequest: jest.fn(),
 };
 jest.mock('github-api', () => jest.fn().mockImplementation(() => ({
   getRepo() {

@@ -104,24 +104,22 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should return true if "git rev-parse --verify" succeed', async () => {
         fixtureContext.workingBranch = 'foo-branch';
-        mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'some-hash', stderr: '' }));
+        mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
 
         const res = await runner(fixtureContext, 'repo-84');
         expect(res).toEqual(true);
 
-        const expectedCwd = fixtureContext.rootDir + '/repo-84';
-        expect(mocks.utils.exec.mock.calls).toEqual([['git rev-parse --verify foo-branch', { cwd: expectedCwd }]]);
+        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
       });
 
       it('Should return false if "git rev-parse --verify" fails', async () => {
         fixtureContext.workingBranch = 'foo-branch';
-        mocks.utils.exec.mockImplementationOnce(() => { throw new Error(); });
+        mocks.sg.revparse.mockImplementationOnce(() => { throw new Error(); });
 
         const res = await runner(fixtureContext, 'repo-84');
         expect(res).toEqual(false);
 
-        const expectedCwd = fixtureContext.rootDir + '/repo-84';
-        expect(mocks.utils.exec.mock.calls).toEqual([['git rev-parse --verify foo-branch', { cwd: expectedCwd }]]);
+        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
       });
     });
 
@@ -181,55 +179,74 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(title).toEqual(`Creating PR in '${colors.bold('repo-84')}'`);
       });
 
-      it('Should not call `hub pull-request` if the repo is not in pullRequestsPerRepo', async () => {
+      it('Should not create a PR if the repo is not in pullRequestsPerRepo', async () => {
         fixtureContext.pullRequestsPerRepo = genRepoMap(['foo-repo']);
 
         await runner(fixtureContext, 'repo-84');
 
         expect(fixtureContext.pullRequestsPerRepo).toEqual(genRepoMap(['foo-repo']));
-        expect(mocks.utils.exec.mock.calls).toEqual([]);
+        expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([]);
+        expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
       });
 
       [
         {
           contextParams: {},
-          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`"' },
-        {
-          contextParams: { reviewer:  'boss' },
-          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=boss'
+          expectedMessage: 'PR on `foo-branch` for `repo-84`',
+          expectedReviewers: null,
         },
         {
-          contextParams: { reviewers: 'rev1,rev2' },
-          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=rev1,rev2',
+          contextParams: { reviewers:  'boss' },
+          expectedMessage: 'PR on `foo-branch` for `repo-84`',
+          expectedReviewers: ['boss']
+        },
+        {
+          contextParams: { reviewers:  'reviewer1,reviewer2' },
+          expectedMessage: 'PR on `foo-branch` for `repo-84`',
+          expectedReviewers: ['reviewer1', 'reviewer2']
+        },
+        {
+          contextParams: { collaborators: 'rev1,rev2' },
+          expectedMessage: 'PR on `foo-branch` for `repo-84`',
+          expectedReviewers: ['rev1', 'rev2'],
           expectPickRandom: true
         },
         {
-          contextParams: { reviewer:  'boss', reviewers: 'rev1,rev2' },
-          expectHubArgs: '--message="PR on `foo-branch` for `repo-84`" --reviewer=boss',
+          contextParams: { reviewers:  'boss', collaborators: 'rev1,rev2' },
+          expectedMessage: 'PR on `foo-branch` for `repo-84`',
+          expectedReviewers: ['boss'],
         }
-      ].forEach(({ expectHubArgs, contextParams, expectPickRandom = false }) => {
-        it(`Should call 'hub pull-request '${expectHubArgs}' when provided with ${JSON.stringify(contextParams)}`, async () => {
+      ].forEach(({ expectedMessage, expectedReviewers, contextParams, expectPickRandom = false }) => {
+        const prDesc = `title:${expectedMessage}, reviewers:${expectedReviewers}`;
+        it(`Should create a PR with ${prDesc} when provided with ${JSON.stringify(contextParams)}`, async () => {
           const context = createFixtureContext('repo-84');
           Object.assign(context.config, contextParams);
           context.pullRequestsPerRepo = genRepoMap(['repo-84']);
           context.workingBranch = 'foo-branch';
 
-          mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'Done.', stderr: '' }));
+          mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+          mocks.ghRepo.createPullRequest.mockImplementationOnce(() => ({ data: { html_url: 'pr-url', number: 42 } }));
 
-          if (contextParams.reviewers) {
-            const res = contextParams.reviewers.split(',').slice(0, 2);
+          if (contextParams.collaborators) {
+            const res = contextParams.collaborators.split(',').slice(0, 2);
             mocks.utils.pickRandom.mockImplementationOnce(() => res);
           }
 
           await runner(context, 'repo-84');
 
-          expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', 'Done.']]));
+          expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42 }]]));
 
-          const expectedCwd = context.rootDir + '/repo-84';
-          expect(mocks.utils.exec.mock.calls).toEqual([['hub pull-request ' + expectHubArgs, { cwd: expectedCwd }]]);
+          const expectedCreatePRArgs = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage  };
+          expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[expectedCreatePRArgs]]);
+
+          if (expectedReviewers) {
+            expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
+          } else {
+            expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
+          }
 
           if (expectPickRandom) {
-            const col = contextParams.reviewers.split(',');
+            const col = contextParams.collaborators.split(',');
             expect(mocks.utils.pickRandom.mock.calls).toEqual([[col, 2]]);
           } else {
             expect(mocks.utils.pickRandom.mock.calls).toEqual([]);
@@ -238,21 +255,6 @@ function testSuiteFactory(setupHooks, testParams) {
           expectDebugCalls();
         });
       });
-
-      it('Should throw an error if an issue occurs', async () => {
-        fixtureContext.pullRequestsPerRepo = new Set(['repo-84']);
-        fixtureContext.workingBranch = 'foo-branch';
-
-        mocks.utils.exec.mockImplementationOnce(() => ({ stdout: 'stdout', stderr: 'stderr' }));
-
-        await expect(runner(fixtureContext, 'repo-84')).rejects.toThrowError(/stderr/);
-
-        const expectedCwd = fixtureContext.rootDir + '/repo-84';
-        const expectedCmd = 'hub pull-request --message="PR on `foo-branch` for `repo-84`"';
-        expect(mocks.utils.exec.mock.calls).toEqual([[expectedCmd, { cwd: expectedCwd }]]);
-
-        expectDebugCalls();
-      });
     });
 
     describe('PR body generation', () => {
@@ -260,11 +262,11 @@ function testSuiteFactory(setupHooks, testParams) {
         pullRequestsPerRepo: new Map(),
         expectedPullRequestBody: undefined
       }, {
-        pullRequestsPerRepo: new Map([['foo-repo', 'foo-pr-url']]),
-        expectedPullRequestBody: 'Pull Request on 1 repository:\n* `foo-repo` : [foo-pr-url](foo-pr-url)'
+        pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
+        expectedPullRequestBody: 'Pull Request on 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
       }, {
-        pullRequestsPerRepo: new Map([['repo1', 'pr-url-1'], ['repo2', 'pr-url-2']]),
-        expectedPullRequestBody: 'Pull Request on 2 repositories:\n* `repo1` : [pr-url-1](pr-url-1)\n* `repo2` : [pr-url-2](pr-url-2)'
+        pullRequestsPerRepo: genRepoMapWithValues(['repo1', 'repo2']),
+        expectedPullRequestBody: 'Pull Request on 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
       }].forEach((scenario) => {
 
         const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));
@@ -291,12 +293,12 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should update the PR body if the repo is in the list', async () => {
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
-        fixtureContext.pullRequestsPerRepo = new Map([['repo-84', 'repo-pr-url/123']]);
+        fixtureContext.pullRequestsPerRepo = new Map([['repo-84', { html_url: 'repo-pr-url/123', number: 123 }]]);
         fixtureContext.pullRequestBody = 'updated body';
         const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
 
         expect(result).toEqual(genStatusResult('repo-pr-url/123'));
-        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([['123', {body: fixtureContext.pullRequestBody}]]);
+        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, {body: fixtureContext.pullRequestBody}]]);
       });
     });
   });
@@ -316,14 +318,18 @@ function testSuiteFactory(setupHooks, testParams) {
     return new Map(repos.map(r => [r, null]));
   }
 
+  function genRepoMapWithValues(repos) {
+    return new Map(repos.map(r => [r, { html_url: r + '-pr-url', number: 42 }]));
+  }
+
   function genCheckoutResult(repo, current) {
     return { res: current === 'foo-branch', repo };
   }
 
-  function genStatusResult(pushed) {
+  function genStatusResult(pr) {
     const r = { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } };
-    if (pushed) {
-      r.pushed = pushed;
+    if (pr) {
+      r.pr = pr;
     }
     return r;
   }
