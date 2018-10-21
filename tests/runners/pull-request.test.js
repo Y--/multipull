@@ -67,6 +67,10 @@ function testSuiteFactory(setupHooks, testParams) {
         'git@github.com:username/repo-84.git\n',
         'git@github.com:username/repo-84',
         'git@github.com:username/repo-84\n',
+        'https://github.com/username/repo-84.git',
+        'https://github.com/username/repo-84.git\n',
+        'https://github.com/username/repo-84',
+        'https://github.com/username/repo-84\n'
       ].forEach((lsRemoteResult) => {
         it(`Should proceed if git ls-remote returns "${lsRemoteResult}"`, async () => {
           expect(fixtureContext.getWorkingBranch()).toEqual('');
