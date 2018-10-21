@@ -23,6 +23,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+      expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([]);
 
       expectDebugCalls();
     });
@@ -43,6 +44,46 @@ function testSuiteFactory(setupHooks, testParams) {
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
 
       expectDebugCalls();
+    });
+
+    describe('When using the --pr flag', () => {
+      beforeEach(() => {
+        fixtureContext.config.pr = true;
+      });
+
+      afterEach(() => {
+        delete fixtureContext.config.pr;
+      });
+
+      it('Should not do anything if the current branch is master', async () => {
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+
+        const res = await statusRepo(fixtureContext, REPO_NAME);
+        expect(res).toEqual({
+          status: { current: 'master' },
+          stash: { all: [], latest: null, total: 0 }
+        });
+
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([]);
+      });
+
+      it('Should find a pull request if the github API returns one', async () => {
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
+        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{ html_url: 'pr-url' }] }));
+
+        const res = await statusRepo(fixtureContext, REPO_NAME);
+        expect(res).toEqual({
+          pr: 'pr-url',
+          status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
+          stash: { all: [], latest: null, total: 0 },
+        });
+
+        const expectedLsPRArgs = {base: 'master', head: 'foo-owner:foo-branch', state: 'open'};
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
+      });
     });
   });
 
