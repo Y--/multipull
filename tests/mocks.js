@@ -12,6 +12,7 @@ const mockGHRepo = {
   createPullRequest: jest.fn(),
   createReviewRequest: jest.fn(),
   listPullRequests: jest.fn(),
+  mergePullRequest: jest.fn(),
   updatePullRequest: jest.fn(),
 };
 jest.mock('github-api', () => jest.fn().mockImplementation(() => ({
