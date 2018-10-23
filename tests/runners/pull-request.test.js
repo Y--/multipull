@@ -259,6 +259,33 @@ function testSuiteFactory(setupHooks, testParams) {
           expectDebugCalls();
         });
       });
+
+      it('Should not fail the PR creation if we cannot add the reviewers', async () => {
+        const context = createFixtureContext('repo-84');
+        context.config.collaborators = 'rev1,rev2';
+        context.pullRequestsPerRepo = genRepoMap(['repo-84']);
+        context.workingBranch = 'foo-branch';
+
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.ghRepo.createPullRequest.mockImplementationOnce(() => ({ data: { html_url: 'pr-url', number: 42 } }));
+        mocks.ghRepo.createReviewRequest.mockImplementationOnce(() => { throw new Error('Fail'); });
+
+        const collaborators = context.config.collaborators.split(',').slice(0, 2);
+        mocks.utils.pickRandom.mockImplementationOnce(() => collaborators);
+
+        await runner(context, 'repo-84');
+
+        expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42, errors: [new Error('Fail')] }]]));
+
+        const expectedReviewers = ['rev1', 'rev2'];
+        const expectedMessage = 'PR on `foo-branch` for `repo-84`';
+        const expectedCreatePRArgs = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage  };
+        expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[expectedCreatePRArgs]]);
+        expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
+        expect(mocks.utils.pickRandom.mock.calls).toEqual([[collaborators, 2]]);
+
+        expectDebugCalls();
+      });
     });
 
     describe('PR body generation', () => {
@@ -302,6 +329,18 @@ function testSuiteFactory(setupHooks, testParams) {
         const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
 
         expect(result).toEqual(genStatusResult('repo-pr-url/123'));
+        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, {body: fixtureContext.pullRequestBody}]]);
+      });
+
+      it('Should add the error if it finds one', async () => {
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        fixtureContext.pullRequestsPerRepo = new Map([['repo-84', { html_url: 'repo-pr-url/123', number: 123, errors: ['foo'] }]]);
+        fixtureContext.pullRequestBody = 'updated body';
+        const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
+
+        const expectedResult = genStatusResult('repo-pr-url/123');
+        expectedResult.errors = ['foo'];
+        expect(result).toEqual(expectedResult);
         expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, {body: fixtureContext.pullRequestBody}]]);
       });
     });
