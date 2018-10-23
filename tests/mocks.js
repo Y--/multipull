@@ -8,18 +8,29 @@ mockDebug.enabled = false;
 
 jest.mock('debug', () => jest.fn().mockImplementation(() => mockDebug));
 
-const mockGHRepo = {
-  createPullRequest: jest.fn(),
-  createReviewRequest: jest.fn(),
-  listPullRequests: jest.fn(),
-  mergePullRequest: jest.fn(),
-  updatePullRequest: jest.fn(),
-};
-jest.mock('github-api', () => jest.fn().mockImplementation(() => ({
-  getRepo() {
-    return mockGHRepo;
-  }
-})));
+const mockGHRepo = {};
+
+const ghRepoFunctionNames = [
+  'createPullRequest',
+  'createReviewRequest',
+  'getCombinedStatus',
+  'getPullRequest',
+  'getReviews',
+  'listPullRequests',
+  'mergePullRequest',
+  'updatePullRequest'
+];
+for (const funcName of ghRepoFunctionNames) {
+  mockGHRepo[funcName] = jest.fn();
+}
+
+jest.mock('github-api', () =>
+  jest.fn().mockImplementation(() => ({
+    getRepo() {
+      return mockGHRepo;
+    }
+  }))
+);
 
 const sg = {};
 const simpleGit = require('simple-git/src/git');
@@ -52,4 +63,3 @@ exports.useMockedUtils = useMockedUtils;
 function useMockedUtils() {
   Object.assign(utils, mockedUtils);
 }
-

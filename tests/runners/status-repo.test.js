@@ -28,10 +28,10 @@ function testSuiteFactory(setupHooks, testParams) {
       expectDebugCalls();
     });
 
-    testGS('call git status on a branch that is in sync with master', '',                 { ahead: 0, behind: 0 });
-    testGS('call git status on a branch ahead of master',             '>hash-1\n>hash-2', { ahead: 2, behind: 0 });
-    testGS('call git status on a branch behind master',               '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
-    testGS('call git status on a branch that diverged from master',   '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
+    testGS('call git status on a branch that is in sync with master', '', { ahead: 0, behind: 0 });
+    testGS('call git status on a branch ahead of master', '>hash-1\n>hash-2', { ahead: 2, behind: 0 });
+    testGS('call git status on a branch behind master', '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
+    testGS('call git status on a branch that diverged from master', '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
 
     it('the stash count is 0 by default', async () => {
       mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
@@ -68,21 +68,163 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([]);
       });
 
-      it('Should find a pull request if the github API returns one', async () => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
-        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
-        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
-        mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{ html_url: 'pr-url' }] }));
+      [
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'APPROVED' }, { state: 'CHANGES_REQUESTED' }],
+            combinedStatus: { state: 'pending', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: true },
+          },
 
-        const res = await statusRepo(fixtureContext, REPO_NAME);
-        expect(res).toEqual({
-          pr: 'pr-url',
-          status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
-          stash: { all: [], latest: null, total: 0 },
+          expectedResult: {
+            build: 'Pending',
+            mergeable: 'Yes',
+            pr: 'pr-url',
+            reviews: '1 approved, 1 requested changes',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'CHANGES_REQUESTED' }],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: true },
+          },
+
+          expectedResult: {
+            build: 'Green',
+            mergeable: 'Yes',
+            pr: 'pr-url',
+            reviews: '1 requested changes',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'CHANGES_REQUESTED' }],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: false },
+          },
+
+          expectedResult: {
+            build: 'Green',
+            mergeable: 'Conflicts',
+            pr: 'pr-url',
+            reviews: '1 requested changes',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'COMMENTED' }],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: null },
+          },
+
+          expectedResult: {
+            build: 'Green',
+            mergeable: 'Unknown',
+            pr: 'pr-url',
+            reviews: '1 comment',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [],
+            combinedStatus: { state: 'failure', statuses: [{ state: 'failure', description: 'Because it failed' }] },
+            pullRequest: { html_url: 'pr-url', mergeable: true },
+          },
+
+          expectedResult: {
+            build: 'Because it failed',
+            mergeable: 'Yes',
+            pr: 'pr-url',
+            reviews: 'Not reviewed',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [],
+            reviews: [],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: true },
+          },
+
+          expectedResult: {
+            pr: ''
+          }
+        },
+        {
+          fixture: {
+            pullRequests: null,
+            reviews: [],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: true },
+          },
+
+          expectedResult: {}
+        }
+      ].forEach(({ fixture, expectedResult }) => {
+
+        it(`Should return ${JSON.stringify(expectedResult)} when ${JSON.stringify(fixture)}`, async () => {
+          mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
+          mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+          mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+
+          mocks.ghRepo.listPullRequests.mockImplementationOnce(() => createGHResponse(fixture.pullRequests));
+
+          if (fixture.pullRequests && fixture.pullRequests.length) {
+            mocks.ghRepo.getReviews.mockImplementationOnce(() => createGHResponse(fixture.reviews));
+            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
+            mocks.ghRepo.getPullRequest.mockImplementationOnce(() => createGHResponse(fixture.pullRequest));
+          }
+
+          const res = await statusRepo(fixtureContext, REPO_NAME);
+          expect(res).toEqual(Object.assign({
+            stash: { all: [], latest: null, total: 0 },
+            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } }
+          }, expectedResult));
+
+          const expectedLsPRArgs = { base: 'master', head: 'foo-owner:foo-branch', state: 'open' };
+          expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
+
+          const prNumberCalls = fixture.pullRequests ? fixture.pullRequests.map(pr => [pr.number]) : [];
+          const shaCalls = fixture.pullRequests ? fixture.pullRequests.map(pr => [pr.head.sha]) : [];
+          expect(mocks.ghRepo.getReviews.mock.calls).toEqual(prNumberCalls);
+          expect(mocks.ghRepo.getCombinedStatus.mock.calls).toEqual(shaCalls);
+          expect(mocks.ghRepo.getPullRequest.mock.calls).toEqual(prNumberCalls);
         });
+      });
 
-        const expectedLsPRArgs = {base: 'master', head: 'foo-owner:foo-branch', state: 'open'};
-        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
+      [{
+        fixture: {
+          combinedStatus: { state: 'success', statuses: [] },
+          pullRequest: { html_url: 'pr-url', mergeable: 'wrong' },
+        },
+
+        expectedError: 'Invalid mergeable value \'wrong\''
+      }, {
+        fixture: {
+          combinedStatus: { state: 'not-a-state', statuses: [] },
+          pullRequest: { html_url: 'pr-url', mergeable: null },
+        },
+
+        expectedError: 'Invalid state value \'not-a-state\''
+      }].forEach(({ fixture, expectedError }) => {
+        it(`Should throw an error if the parameters are ${JSON.stringify(fixture)}: ${JSON.stringify(expectedError)} `, async () => {
+          mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
+          mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+          mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+
+          mocks.ghRepo.listPullRequests.mockImplementationOnce(() => createGHResponse([{ number: 42, head: { sha: 33 } }]));
+          mocks.ghRepo.getReviews.mockImplementationOnce(() => createGHResponse([]));
+          mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
+          mocks.ghRepo.getPullRequest.mockImplementationOnce(() => createGHResponse(fixture.pullRequest));
+
+          await expect(statusRepo(fixtureContext, REPO_NAME)).rejects.toThrowError(expectedError);
+        });
       });
     });
   });
@@ -112,6 +254,10 @@ function testSuiteFactory(setupHooks, testParams) {
 
       expectDebugCalls();
     });
+  }
+
+  function createGHResponse(data) {
+    return { data };
   }
 
   function expectDebugCalls() {
