@@ -18,7 +18,13 @@
     "url": "https://github.com/Y--/multipull/issues"
   },
   "bin": {
-    "multipull": "./bin/multipull"
+    "multicheckout": "./bin/multicheckout",
+    "multimerge": "./bin/multimerge",
+    "multipr": "./bin/multipr",
+    "multipull": "./bin/multipull",
+    "multipush": "./bin/multipush",
+    "multirebase": "./bin/multirebase",
+    "multistatus": "./bin/multistatus"
   },
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
