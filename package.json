@@ -19,6 +19,7 @@
   },
   "bin": {
     "multicheckout": "./bin/multicheckout",
+    "multiexec": "./bin/multiexec",
     "multimerge": "./bin/multimerge",
     "multipr": "./bin/multipr",
     "multipull": "./bin/multipull",
