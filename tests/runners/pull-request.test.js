@@ -73,7 +73,7 @@ function testSuiteFactory(setupHooks, testParams) {
         'https://github.com/username/repo-84\n'
       ].forEach((lsRemoteResult) => {
         it(`Should proceed if git ls-remote returns "${lsRemoteResult}"`, async () => {
-          expect(fixtureContext.getWorkingBranch()).toEqual('');
+          expect(fixtureContext.getWorkingBranch()).toEqual(null);
           mocks.utils.exec
             .mockImplementationOnce(() => ({ stdout: lsRemoteResult }))
             .mockImplementationOnce(() => ({ stdout: 'foo-branch\n' }));
@@ -294,10 +294,10 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedPullRequestBody: undefined
       }, {
         pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
-        expectedPullRequestBody: 'Pull Request on 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
+        expectedPullRequestBody: 'Pull request on 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
       }, {
         pullRequestsPerRepo: genRepoMapWithValues(['repo1', 'repo2']),
-        expectedPullRequestBody: 'Pull Request on 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
+        expectedPullRequestBody: 'Pull request on 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
       }].forEach((scenario) => {
 
         const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));

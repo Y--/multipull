@@ -78,7 +78,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Pending',
+            build: 'N/A. ',
             mergeable: 'Yes',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
@@ -93,7 +93,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Green',
+            build: 'Checks: ',
             mergeable: 'Yes',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -108,7 +108,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Green',
+            build: 'Checks: ',
             mergeable: 'Conflicts',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -123,7 +123,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Green',
+            build: 'Checks: ',
             mergeable: 'Unknown',
             pr: 'pr-url',
             reviews: '1 comment',
@@ -138,7 +138,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Because it failed',
+            build: 'Because it failed\n1 failure',
             mergeable: 'Yes',
             pr: 'pr-url',
             reviews: 'Not reviewed',
