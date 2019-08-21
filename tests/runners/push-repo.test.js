@@ -26,7 +26,7 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         status: { ahead: 1, behind: 3, current: 'master', tracking: 'origin/master' },
         cmdLineArgs: {},
-        expectedPushed: 'master is behind 3 commits from origin/master',
+        expectedPushed: 'No (\'master\' is behind 3 commits from \'origin/master\')',
         expectedPushCall: null
       },
       {
