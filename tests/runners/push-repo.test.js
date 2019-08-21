@@ -39,7 +39,25 @@ function testSuiteFactory(setupHooks, testParams) {
         status: { ahead: 3, behind: 0, current: 'foo-branch', tracking: 'origin/foo-branch' },
         cmdLineArgs: { force: true },
         expectedPushed: 'Yes',
+        expectedPushCall: []
+      },
+      {
+        status: { ahead: 3, behind: 1, current: 'foo-branch', tracking: 'origin/foo-branch' },
+        cmdLineArgs: { force: true },
+        expectedPushed: 'Yes (forced)',
         expectedPushCall: ['--force']
+      },
+      {
+        status: { ahead: 0, behind: 0, current: 'HEAD', tracking: null },
+        cmdLineArgs: { force: true },
+        expectedPushed: 'No (detached HEAD)',
+        expectedPushCall: null
+      },
+      {
+        status: { ahead: 0, behind: 0, current: 'HEAD', tracking: null },
+        cmdLineArgs: {},
+        expectedPushed: 'No (detached HEAD)',
+        expectedPushCall: null
       },
       {
         status: { ahead: 3, behind: 0, current: 'foo-branch', tracking: 'origin/foo-branch' },
