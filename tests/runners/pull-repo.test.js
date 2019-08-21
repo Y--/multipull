@@ -20,7 +20,7 @@ function testSuiteFactory(setupHooks, testParams) {
         status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
-          pull: [[null, null, { '--all': null, '--stat': null, '--rebase': null }]]
+          pull: [[null, null, { '--all': null, '--stat': null }]]
         }
       },
       {
