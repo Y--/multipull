@@ -91,7 +91,14 @@ function testSuiteFactory(setupHooks) {
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 
-      await expect(processor.run()).rejects.toThrowError(/Aborting execution because of 1 error in repo-42/);
+      const results = await processor.run();
+      expect(results).toHaveLength(3);
+      expectValidResult(results[0], 'step1');
+      expectValidResult(results[2], 'step1');
+
+      expect(results[1].err.message).toEqual('Failed');
+      expect(results[1].err.stack).toMatch(/Error: Failed/);
+      expect(results[1].repo).toEqual('repo-42');
 
       expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
 
@@ -110,7 +117,9 @@ function testSuiteFactory(setupHooks) {
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 
-      await expect(processor.run()).rejects.toThrowError(/Aborting execution:/);
+      const result = await processor.run();
+      expect(result.err.message).toEqual('Failed');
+      expect(result.err.stack).toMatch(/Error: Failed/);
 
       expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
 
@@ -195,9 +204,14 @@ function expectMockRunner(mockRunner) {
 
 function expectValidResults(results) {
   expect(results).toHaveLength(3);
+
   for (const result of results) {
-    expect(result.repo).toMatch(repoIdRe);
-    expect(result.res).toEqual('result for ' + result.repo);
-    expect(result.elapsed).toBeGreaterThanOrEqual(0);
+    expectValidResult(result);
   }
+}
+
+function expectValidResult(result, partId = 'result') {
+  expect(result.repo).toMatch(repoIdRe);
+  expect(result.res).toEqual(`${partId} for ${result.repo}`);
+  expect(result.elapsed).toBeGreaterThanOrEqual(0);
 }
