@@ -17,7 +17,7 @@ function testSuiteFactory(setupHooks, testParams) {
       fixtureContext.workingBranch = null;
       fixtureContext.interrupted = false;
       delete fixtureContext.pullRequestsPerRepo;
-      delete fixtureContext.pullRequestBody;
+      delete fixtureContext.pullRequestsFinalDescription;
     });
 
     describe('Parameters validation', () => {
@@ -200,12 +200,12 @@ function testSuiteFactory(setupHooks, testParams) {
           expectedReviewers: null,
         },
         {
-          contextParams: { reviewers:  'boss' },
+          contextParams: { reviewers: 'boss' },
           expectedMessage: 'PR on `foo-branch` for `repo-84`',
           expectedReviewers: ['boss']
         },
         {
-          contextParams: { reviewers:  'reviewer1,reviewer2' },
+          contextParams: { reviewers: 'reviewer1,reviewer2' },
           expectedMessage: 'PR on `foo-branch` for `repo-84`',
           expectedReviewers: ['reviewer1', 'reviewer2']
         },
@@ -216,7 +216,7 @@ function testSuiteFactory(setupHooks, testParams) {
           expectPickRandom: true
         },
         {
-          contextParams: { reviewers:  'boss', collaborators: 'rev1,rev2' },
+          contextParams: { reviewers: 'boss', collaborators: 'rev1,rev2' },
           expectedMessage: 'PR on `foo-branch` for `repo-84`',
           expectedReviewers: ['boss'],
         }
@@ -226,6 +226,7 @@ function testSuiteFactory(setupHooks, testParams) {
           const context = createFixtureContext('repo-84');
           Object.assign(context.config, contextParams);
           context.pullRequestsPerRepo = genRepoMap(['repo-84']);
+          context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage };
           context.workingBranch = 'foo-branch';
 
           mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
@@ -240,8 +241,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42 }]]));
 
-          const expectedCreatePRArgs = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage  };
-          expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[expectedCreatePRArgs]]);
+          expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
 
           if (expectedReviewers) {
             expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
@@ -264,6 +264,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const context = createFixtureContext('repo-84');
         context.config.collaborators = 'rev1,rev2';
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
+        context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch', title: 'PR on `foo-branch` for `repo-84`' };
         context.workingBranch = 'foo-branch';
 
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
@@ -278,9 +279,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42, errors: [new Error('Fail')] }]]));
 
         const expectedReviewers = ['rev1', 'rev2'];
-        const expectedMessage = 'PR on `foo-branch` for `repo-84`';
-        const expectedCreatePRArgs = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage  };
-        expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[expectedCreatePRArgs]]);
+        expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
         expect(mocks.utils.pickRandom.mock.calls).toEqual([[collaborators, 2]]);
 
@@ -307,7 +306,9 @@ function testSuiteFactory(setupHooks, testParams) {
         it(`Should generate '${expected}' if repo list is ${pullRequestsPerRepoStr}`, () => {
           fixtureContext.pullRequestsPerRepo = scenario.pullRequestsPerRepo;
           prBodyGeneration.runner(fixtureContext);
-          expect(fixtureContext.pullRequestBody).toEqual(scenario.expectedPullRequestBody);
+
+          const body = fixtureContext.pullRequestsFinalDescription && fixtureContext.pullRequestsFinalDescription.body;
+          expect(body).toEqual(scenario.expectedPullRequestBody);
         });
       });
     });
@@ -325,23 +326,23 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should update the PR body if the repo is in the list', async () => {
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         fixtureContext.pullRequestsPerRepo = new Map([['repo-84', { html_url: 'repo-pr-url/123', number: 123 }]]);
-        fixtureContext.pullRequestBody = 'updated body';
+        fixtureContext.pullRequestsFinalDescription = { body: 'updated body' };
         const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
 
         expect(result).toEqual(genStatusResult('repo-pr-url/123'));
-        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, {body: fixtureContext.pullRequestBody}]]);
+        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, fixtureContext.pullRequestsFinalDescription]]);
       });
 
       it('Should add the error if it finds one', async () => {
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         fixtureContext.pullRequestsPerRepo = new Map([['repo-84', { html_url: 'repo-pr-url/123', number: 123, errors: ['foo'] }]]);
-        fixtureContext.pullRequestBody = 'updated body';
+        fixtureContext.pullRequestsFinalDescription = { body: 'updated body' };
         const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
 
         const expectedResult = genStatusResult('repo-pr-url/123');
         expectedResult.errors = ['foo'];
         expect(result).toEqual(expectedResult);
-        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, {body: fixtureContext.pullRequestBody}]]);
+        expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, fixtureContext.pullRequestsFinalDescription]]);
       });
     });
   });
