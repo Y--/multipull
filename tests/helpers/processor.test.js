@@ -91,6 +91,8 @@ function testSuiteFactory(setupHooks) {
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 
+      mocks.sg.stashList.mockImplementation(() => ({ total: 0 })) ;
+      mocks.sg.status.mockImplementation(() => ({ current: 'master' }));
       const results = await processor.run();
       expect(results).toHaveLength(3);
       expectValidResult(results[0], 'step1');
