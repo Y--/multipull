@@ -32,6 +32,38 @@ Example:
 
 ## Usage
 
+Every command will always display a table summarizing the status at the end.
+Any cell that is equal to the default will contain an empty value,
+and any line that only contains default values will be omitted.
+
+Parameter    | Description
+------------ | -------------
+Repo         | Repository's name
+Current      | Current branch (if different from default one)
+Tracking     | Tracking branch (if different from default one)
+Pushed       | When using `multipush`: displays a confirmation or an reason for not doing so
+Merged       | When using `multimerge`: displays a confirmation or an reason for not doing so
+Pull Request | When using `multistatus --pr`: displays the link of an existing pull request on the current branch
+Mergeable    | Indicate GitHub's mergeable status (i.e no conflict)
+Build        | When using `multistatus --ci`: displays the build status on this branch (based on GitHub checks)
+Reviews      | Indicate the number of reviews and comment on GitHub's pull request
+S            | Number of stashes
+??           | Number of untracked files
+M            | Number of modified files
+D            | Number of deleted files
+A            | Number of added files
+C            | Number of copied files
+Files        | When using `multipull` indicate the number of updated files
+Changes      | When using `multipull` indicate the number of changed lines
+Insertions   | When using `multipull` indicate the number of inserted lines
+Deletions    | When using `multipull` indicate the number of deleted lines
+Error        | Error message
+E            | Elapsed time
+
+Note the `Files` section may contain:
+* a `(n)` suffix is added when native files are updated
+* a `(p)` suffix is added when a `package.json` file is updated
+
 ### multicheckout
 
 By default, `multicheckout [branch]` will run
@@ -78,32 +110,50 @@ Use this parameter to edit the pull request description
 eg.: `multipr --m`
 
 ### multipull
+
+Execute `git pull` all repositories.
+
+eg. `multipull`
+
+Notes:
+* will attempt to rebase if need be;
+* abort pulling of a remote branch if it would produce conflicts.
+
 ### multipush
+
+Execute `git push` in all repositories.
+
+eg. `multipush`
+
+#### Parameter `force`
+
+Execute `git push --force` in all repositories.
+
+eg. `multipush --force`
+
+Notes:
+* will refuse to force-push on default branch;
+* will call `git` with `--set-upstream origin` if the current `tracking` branch is not set.
+
 ### multirebase
+
+Execute `git rebase <orgin branch>` in all repositories where the branch is different from the default one.
+
 ### multistatus
 
 #### Basic
 
+Displays the status of the current repositories
 
-#### With Pull Request
+eg. `multistatus`
+
+#### With Pull Request (`--pr`)
 
 On the repositories that are on a branch different from the default branch, and have an open Github pull request,  `multistatus --pr` will output:
 * the pull request's mergability status (wether it conflicts with the destination branch) ;
 * Github's "checks" status ;
 * the number of "approved", "request for changes" and "comments".
 
-#### With Continous Integration Report
+#### With Continous Integration Report (`--ci`)
 
 On the repositories that are on a branch different from the default branch, `multistatus --ci` will output Github's "checks" status
-
-
-## TODO
- * Documentation
- * More tests
- * Get assignees automatically
-  ** `GET` `/repos/:owner/:repo/assignees/:assignee`
-  ** cache them in `~/.multipullrc`, expire them every week or month (by default)
- * Implement "browse" flag when creating PR
- * After 'merge PR':
-  ** checkout master on these repos
-  ** pull on these repos
