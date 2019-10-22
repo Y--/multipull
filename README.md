@@ -14,7 +14,7 @@
 Add a `.multipullrc` file in your home directory containing a JSON with the following keys :
 
 * `root` : the absolute path where your repositories are located
-* `repos` : an array of repositories names
+* `repos` : an array of repositories names (will use every folder that have a `.git` folder in `root` if not specified)
 * `branches` : the default branch in the repository if not `master`
 
 Example:
