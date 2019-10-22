@@ -33,6 +33,7 @@ Example:
 ## Usage
 
 Every command will always display a table summarizing the status at the end.
+
 Any cell that is equal to the default will contain an empty value,
 and any line that only contains default values will be omitted.
 
@@ -63,6 +64,21 @@ E            | Elapsed time
 Note the `Files` section may contain:
 * a `(n)` suffix is added when native files are updated
 * a `(p)` suffix is added when a `package.json` file is updated
+
+## Commands overview
+
+Command       | Description
+------------- | -------------
+[multicheckout](#multicheckout) | `git checkout <branch>`
+[multiexec](#multiexec)         | run command in each repos
+[multimerge](#multimerge)       | merge pull request
+[multipr](#multipr)             | create pull request
+[multipull](#multipull)         | pull from remote branch
+[multipush](#multipush)         | push to remote branch
+[multirebase](#multirebase)     | rebase from remote branch
+[multistatus](#multistatus)     | summarize repositories' status
+
+## Commands description
 
 ### multicheckout
 
