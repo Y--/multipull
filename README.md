@@ -170,6 +170,10 @@ On the repositories that are on a branch different from the default branch, and 
 * Github's "checks" status ;
 * the number of "approved", "request for changes" and "comments".
 
+#### Only Pull Requests URLs (`--pr --list`)
+
+On the repositories that are on a branch different from the default branch, and have an open Github pull request,  `multistatus --pr --list` will output the urls of each PRs.
+
 #### With Continous Integration Report (`--ci`)
 
 On the repositories that are on a branch different from the default branch, `multistatus --ci` will output Github's "checks" status
