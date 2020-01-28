@@ -1,4 +1,5 @@
 jest.mock('../lib/helpers/logger');
+jest.mock('../lib/helpers/message-editor');
 
 const mockProgressTick = jest.fn();
 jest.mock('progress', () => jest.fn().mockImplementation(() => ({ tick: mockProgressTick })));
@@ -52,7 +53,9 @@ const originalUtils = Object.assign({}, utils);
 useMockedUtils();
 
 const logger = require('../lib/helpers/logger');
-exports.mocks = { debug: mockDebug, utils, logger, progress: { tick: mockProgressTick }, sg, ghRepo: mockGHRepo };
+const editor = require('../lib/helpers/message-editor');
+const progress = { tick: mockProgressTick };
+exports.mocks = { debug: mockDebug, editor, utils, logger, progress, sg, ghRepo: mockGHRepo };
 
 exports.useOriginalUtils = function() {
   Object.assign(utils, originalUtils);

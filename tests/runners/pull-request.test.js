@@ -246,8 +246,6 @@ function testSuiteFactory(setupHooks, testParams) {
           } else {
             expect(mocks.utils.pickRandom.mock.calls).toEqual([]);
           }
-
-          expectDebugCalls();
         });
       });
     });
@@ -355,18 +353,38 @@ function testSuiteFactory(setupHooks, testParams) {
         const expected = scenario.expectedPullRequestBody
           ? scenario.expectedPullRequestBody.replace(/\n/g, '\\n')
           : scenario.expectedPullRequestBody;
-        it(`Should generate '${expected}' if repo list is ${pullRequestsPerRepoStr}`, () => {
+        it(`Should generate '${expected}' if repo list is ${pullRequestsPerRepoStr}`, async () => {
           if (scenario.workingBranch) {
             fixtureContext.workingBranch = scenario.workingBranch;
           }
           Object.assign(fixtureContext.config, scenario.config);
 
           fixtureContext.pullRequestsPerRepo = scenario.pullRequestsPerRepo;
-          prBodyGeneration.runner(fixtureContext);
+          await prBodyGeneration.runner(fixtureContext);
 
           const body = fixtureContext.pullRequestsFinalDescription && fixtureContext.pullRequestsFinalDescription.body;
           expect(body).toEqual(scenario.expectedPullRequestBody);
         });
+      });
+
+      it('Should allow to edit the content of the PR title and desciption', async () => {
+        const context = createFixtureContext('repo-84');
+        context.config.m = true;
+        context.pullRequestsPerRepo = genRepoMapWithValues(['foo-repo']);
+        context.pullRequestsParams = { title: 'Original title' };
+
+        mocks.editor.editPRDescription.mockImplementationOnce(() => ({ title: 'Edited title', body: 'Edited Body ' }));
+        await prBodyGeneration.runner(context);
+
+        expect(mocks.editor.editPRDescription.mock.calls).toEqual([
+          [
+            {
+              body: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)',
+              title: 'Original title'
+            }
+          ]
+        ]);
+        expect(context.pullRequestsFinalDescription).toEqual({ title: 'Edited title', body: 'Edited Body ' });
       });
     });
 
