@@ -186,6 +186,28 @@ function testSuiteFactory(setupHooks, testParams) {
         expectLogs([['Aborted.']]);
       });
 
+      it('Should create a draft PR if --draft flag is used', async () => {
+        const context = createFixtureContext('repo-84');
+        context.config.draft = true;
+        context.workingBranch = 'foo-branch';
+
+        mocks.utils.getYNAnswer.mockImplementationOnce(() => true);
+
+        await runner(context, [genCheckoutResult('repo-84', 'foo-branch')]);
+
+        expect(context.pullRequestsPerRepo).toEqual(genRepoMap(['repo-84']));
+        expect(context.isInterrupted()).toEqual(false);
+        expect(context.pullRequestsParams).toEqual({
+          AcceptHeader: 'shadow-cat-preview',
+          base: 'master',
+          body: '',
+          draft: true,
+          head: 'foo-branch',
+          title: 'PR from `foo-branch` in `repo-84`'
+        });
+        expectLogs([]);
+      });
+
       [
         { contextParams: {}, expectedReviewers: null },
         { contextParams: { reviewers: 'boss' }, expectedReviewers: ['boss'] },
