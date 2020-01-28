@@ -174,6 +174,10 @@ On the repositories that are on a branch different from the default branch, and 
 
 On the repositories that are on a branch different from the default branch, and have an open Github pull request,  `multistatus --pr --list` will output the urls of each PRs.
 
+#### Open Pull Requests URLs (`--pr --open`)
+
+On the repositories that are on a branch different from the default branch, and have an open Github pull request,  `multistatus --pr --open` will open the PRs URLs in the default system browser.
+
 #### With Continous Integration Report (`--ci`)
 
 On the repositories that are on a branch different from the default branch, `multistatus --ci` will output Github's "checks" status
