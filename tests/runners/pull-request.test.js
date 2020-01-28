@@ -290,13 +290,21 @@ function testSuiteFactory(setupHooks, testParams) {
       }, {
         pullRequestsPerRepo: genRepoMapWithValues(['repo1', 'repo2']),
         expectedPullRequestBody: 'Pull request in 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
+      }, {
+        pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
+        workingBranch: 'foo-bar-123456789',
+        expectedPullRequestBody: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)\n\n\nRelated issue: https://www.pivotaltracker.com/story/show/123456789'
       }].forEach((scenario) => {
-
         const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));
         const expected = scenario.expectedPullRequestBody
           ? scenario.expectedPullRequestBody.replace(/\n/g, '\\n')
           : scenario.expectedPullRequestBody;
         it(`Should generate '${expected}' if repo list is ${pullRequestsPerRepoStr}`, () => {
+          if (scenario.workingBranch) {
+            fixtureContext.workingBranch = scenario.workingBranch;
+          }
+          Object.assign(fixtureContext.config, scenario.config);
+
           fixtureContext.pullRequestsPerRepo = scenario.pullRequestsPerRepo;
           prBodyGeneration.runner(fixtureContext);
 
@@ -336,6 +344,17 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedResult.errors = ['foo'];
         expect(result).toEqual(expectedResult);
         expect(mocks.ghRepo.updatePullRequest.mock.calls).toEqual([[123, fixtureContext.pullRequestsFinalDescription]]);
+      });
+
+      it('Should not update the PR body if the title and body is empty', async () => {
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        fixtureContext.pullRequestsPerRepo = new Map([['repo-84', { html_url: 'repo-pr-url/123', number: 123 }]]);
+        fixtureContext.pullRequestsFinalDescription = {};
+
+        const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');
+        expect(result).toEqual(genStatusResult('repo-pr-url/123'));
+
+        expect(mocks.sg.listRemote.mock.calls).toEqual([]);
       });
     });
   });
