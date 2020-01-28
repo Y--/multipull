@@ -127,7 +127,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('Repository selection', () => {
+    describe('Repository & reviewers selection', () => {
       const { runner } = selectRepositories;
 
       it('Should select the repo that have the existing branch', async () => {
@@ -168,6 +168,46 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.isInterrupted()).toEqual(true);
         expectLogs([['Aborted.']]);
       });
+
+      [
+        { contextParams: {}, expectedReviewers: null, },
+        { contextParams: { reviewers: 'boss' }, expectedReviewers: ['boss'] },
+        { contextParams: { reviewers: 'reviewer1,reviewer2' }, expectedReviewers: ['reviewer1', 'reviewer2'] },
+        { contextParams: { collaborators: 'rev1' }, expectedReviewers: ['rev1'] },
+        { contextParams: { collaborators: 'rev1,rev2' }, expectedReviewers: ['rev1', 'rev2'] },
+        { contextParams: { collaborators: 'rev1,rev2,rev3' }, expectedReviewers: ['rev1', 'rev2'], expectPickRandom: true },
+        { contextParams: { reviewers: 'boss', collaborators: 'rev1,rev2' }, expectedReviewers: ['boss'] }
+      ].forEach(({ contextParams, expectedReviewers, expectPickRandom }) => {
+        const expectedMessage = 'PR from `foo-branch` in `repo-84`';
+        const prDesc = `title:${expectedMessage}, reviewers:${expectedReviewers}`;
+        it(`Should create a PR with ${prDesc} when provided with ${JSON.stringify(contextParams)}`, async () => {
+          const context = createFixtureContext('repo-84');
+          Object.assign(context.config, contextParams);
+          context.workingBranch = 'foo-branch';
+
+
+          mocks.utils.getYNAnswer.mockImplementationOnce(() => true);
+          if (expectPickRandom) {
+            const res = contextParams.collaborators.split(',').slice(0, 2);
+            mocks.utils.pickRandom.mockImplementationOnce(() => res);
+          }
+
+          await runner(context, [genCheckoutResult('repo-84', 'foo-branch')]);
+
+          expect(context.pullRequestsPerRepo).toEqual(genRepoMap(['repo-84']));
+          expect(context.reviewers).toEqual(expectedReviewers);
+          expect(context.pullRequestsParams.title).toEqual(expectedMessage);
+
+          if (expectPickRandom) {
+            const col = contextParams.collaborators.split(',');
+            expect(mocks.utils.pickRandom.mock.calls).toEqual([[col, 2]]);
+          } else {
+            expect(mocks.utils.pickRandom.mock.calls).toEqual([]);
+          }
+
+          expectDebugCalls();
+        });
+      });
     });
 
     describe('PR creation', () => {
@@ -193,76 +233,33 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
       });
 
-      [
-        {
-          contextParams: {},
-          expectedMessage: 'PR on `foo-branch` for `repo-84`',
-          expectedReviewers: null,
-        },
-        {
-          contextParams: { reviewers: 'boss' },
-          expectedMessage: 'PR on `foo-branch` for `repo-84`',
-          expectedReviewers: ['boss']
-        },
-        {
-          contextParams: { reviewers: 'reviewer1,reviewer2' },
-          expectedMessage: 'PR on `foo-branch` for `repo-84`',
-          expectedReviewers: ['reviewer1', 'reviewer2']
-        },
-        {
-          contextParams: { collaborators: 'rev1,rev2' },
-          expectedMessage: 'PR on `foo-branch` for `repo-84`',
-          expectedReviewers: ['rev1', 'rev2'],
-          expectPickRandom: true
-        },
-        {
-          contextParams: { reviewers: 'boss', collaborators: 'rev1,rev2' },
-          expectedMessage: 'PR on `foo-branch` for `repo-84`',
-          expectedReviewers: ['boss'],
-        }
-      ].forEach(({ expectedMessage, expectedReviewers, contextParams, expectPickRandom = false }) => {
-        const prDesc = `title:${expectedMessage}, reviewers:${expectedReviewers}`;
-        it(`Should create a PR with ${prDesc} when provided with ${JSON.stringify(contextParams)}`, async () => {
-          const context = createFixtureContext('repo-84');
-          Object.assign(context.config, contextParams);
-          context.pullRequestsPerRepo = genRepoMap(['repo-84']);
-          context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch', title: expectedMessage };
-          context.workingBranch = 'foo-branch';
+      it('Should create a PR with no reviewer', async () => {
+        const context = createFixtureContext('repo-84');
+        // Object.assign(context.config, contextParams);
+        context.reviewers = null;
+        context.pullRequestsPerRepo = genRepoMap(['repo-84']);
+        context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch' };
+        context.workingBranch = 'foo-branch';
 
-          mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
-          mocks.ghRepo.createPullRequest.mockImplementationOnce(() => ({ data: { html_url: 'pr-url', number: 42 } }));
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.ghRepo.createPullRequest.mockImplementationOnce(() => ({ data: { html_url: 'pr-url', number: 42 } }));
 
-          if (contextParams.collaborators) {
-            const res = contextParams.collaborators.split(',').slice(0, 2);
-            mocks.utils.pickRandom.mockImplementationOnce(() => res);
-          }
 
-          await runner(context, 'repo-84');
+        await runner(context, 'repo-84');
 
-          expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42 }]]));
+        expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42 }]]));
 
-          expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
+        expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
 
-          if (expectedReviewers) {
-            expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
-          } else {
-            expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
-          }
+        expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
 
-          if (expectPickRandom) {
-            const col = contextParams.collaborators.split(',');
-            expect(mocks.utils.pickRandom.mock.calls).toEqual([[col, 2]]);
-          } else {
-            expect(mocks.utils.pickRandom.mock.calls).toEqual([]);
-          }
-
-          expectDebugCalls();
-        });
+        expectDebugCalls();
       });
 
       it('Should not fail the PR creation if we cannot add the reviewers', async () => {
         const context = createFixtureContext('repo-84');
-        context.config.collaborators = 'rev1,rev2';
+        const expectedReviewers = ['rev1', 'rev2'];
+        context.reviewers = expectedReviewers;
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
         context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch', title: 'PR on `foo-branch` for `repo-84`' };
         context.workingBranch = 'foo-branch';
@@ -271,17 +268,13 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.ghRepo.createPullRequest.mockImplementationOnce(() => ({ data: { html_url: 'pr-url', number: 42 } }));
         mocks.ghRepo.createReviewRequest.mockImplementationOnce(() => { throw new Error('Fail'); });
 
-        const collaborators = context.config.collaborators.split(',').slice(0, 2);
-        mocks.utils.pickRandom.mockImplementationOnce(() => collaborators);
-
         await runner(context, 'repo-84');
 
         expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42, errors: [new Error('Fail')] }]]));
 
-        const expectedReviewers = ['rev1', 'rev2'];
+
         expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([[42, { reviewers: expectedReviewers }]]);
-        expect(mocks.utils.pickRandom.mock.calls).toEqual([[collaborators, 2]]);
 
         expectDebugCalls();
       });
@@ -293,10 +286,10 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedPullRequestBody: undefined
       }, {
         pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
-        expectedPullRequestBody: 'Pull request on 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
+        expectedPullRequestBody: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
       }, {
         pullRequestsPerRepo: genRepoMapWithValues(['repo1', 'repo2']),
-        expectedPullRequestBody: 'Pull request on 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
+        expectedPullRequestBody: 'Pull request in 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
       }].forEach((scenario) => {
 
         const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));
