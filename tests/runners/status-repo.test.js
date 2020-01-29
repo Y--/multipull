@@ -257,6 +257,76 @@ function testSuiteFactory(setupHooks, testParams) {
         });
       });
     });
+
+    describe('When using the --ci flag', () => {
+      beforeEach(() => {
+        fixtureContext.config.ci = true;
+        fixtureContext.config.full = true;
+      });
+
+      afterEach(() => {
+        delete fixtureContext.config.ci;
+        delete fixtureContext.config.full;
+      });
+
+      it('Should not do anything if the current branch is master', async () => {
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+
+        const res = await statusRepo(fixtureContext, REPO_NAME);
+        expect(res).toEqual({
+          status: { current: 'master' },
+          stash: { all: [], latest: null, total: 0 }
+        });
+
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([]);
+      });
+
+      [
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 'some-hash' } }],
+            combinedStatus: { state: 'failure', statuses: [{ state: 'failure', description: 'description', target_url: 'target://url' }] },
+          },
+
+          expectedResult: {
+            build: 'description\n1 failure\ntarget://url'
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 'some-hash' } }],
+            combinedStatus: { state: 'pending', statuses: [{ state: 'pending', description: 'description', target_url: 'target://url' }] },
+          },
+
+          expectedResult: {
+            build: 'description. 1 pending - target://url'
+          }
+        }
+      ].forEach(({ fixture, expectedResult }) => {
+
+        it(`Should return ${JSON.stringify(expectedResult)} when ${JSON.stringify(fixture)}`, async () => {
+          mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
+          mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+          mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+          mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+
+          if (fixture.pullRequests && fixture.pullRequests.length) {
+            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
+          }
+
+          const res = await statusRepo(fixtureContext, REPO_NAME);
+          expect(res).toEqual(Object.assign({
+            stash: { all: [], latest: null, total: 0 },
+            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } }
+          }, expectedResult));
+
+
+          const shaCalls = fixture.pullRequests ? fixture.pullRequests.map(pr => [pr.head.sha]) : [];
+          expect(mocks.ghRepo.getCombinedStatus.mock.calls).toEqual(shaCalls);
+        });
+      });
+    });
   });
 
   function testGS(title, revListResult, expectedDiffWithMaster) {
