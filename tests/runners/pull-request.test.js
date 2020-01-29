@@ -275,7 +275,6 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should create a PR with no reviewer', async () => {
         const context = createFixtureContext('repo-84');
-        // Object.assign(context.config, contextParams);
         context.reviewers = null;
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
         context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch' };
@@ -290,6 +289,34 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([[context.pullRequestsParams]]);
 
+        expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
+
+        expectDebugCalls();
+      });
+
+      it('Should send a clond', async () => {
+        const context = createFixtureContext('repo-84');
+        const prParams = { base: 'master', body: '', head: 'foo-branch', AcceptHeader: 'foo' };
+        context.pullRequestsPerRepo = genRepoMap(['repo-84']);
+        context.pullRequestsParams = clone(prParams);
+        context.workingBranch = 'foo-branch';
+
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+
+        let createPullRequestParams = null;
+        mocks.ghRepo.createPullRequest.mockImplementationOnce((params) => {
+          createPullRequestParams = clone(params);
+          delete params.AcceptHeader;
+          return { data: { html_url: 'pr-url', number: 42 } };
+        });
+
+        await runner(context, 'repo-84');
+
+        expect(context.pullRequestsPerRepo).toEqual(new Map([['repo-84', { html_url: 'pr-url', number: 42 }]]));
+
+        expect(createPullRequestParams).toEqual(prParams);
+
+        expect(context.pullRequestsParams.AcceptHeader).toEqual('foo');
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
 
         expectDebugCalls();
@@ -434,6 +461,10 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
   });
+
+  function clone(o) {
+    return JSON.parse(JSON.stringify(o));
+  }
 
   function expectDebugCalls() {
     const { calls } = mocks.debug.mock;
