@@ -79,7 +79,22 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expectedResult: {
             build: 'N/A. ',
-            mergeable: 'Yes',
+            state: 'Yes',
+            pr: 'pr-url',
+            reviews: '1 approved, 1 requested changes',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'APPROVED' }, { state: 'CHANGES_REQUESTED' }],
+            combinedStatus: { state: 'pending', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: true, mergeable_state: 'draft' },
+          },
+
+          expectedResult: {
+            build: 'N/A. ',
+            state: 'draft',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
           }
@@ -94,7 +109,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expectedResult: {
             build: 'Checks: ',
-            mergeable: 'Yes',
+            state: 'Yes',
             pr: 'pr-url',
             reviews: '1 requested changes',
           }
@@ -109,7 +124,22 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expectedResult: {
             build: 'Checks: ',
-            mergeable: 'Conflicts',
+            state: 'Conflicts',
+            pr: 'pr-url',
+            reviews: '1 requested changes',
+          }
+        },
+        {
+          fixture: {
+            pullRequests: [{ number: 42, head: { sha: 33 } }],
+            reviews: [{ state: 'CHANGES_REQUESTED' }],
+            combinedStatus: { state: 'success', statuses: [] },
+            pullRequest: { html_url: 'pr-url', mergeable: false, mergeable_state: 'draft' },
+          },
+
+          expectedResult: {
+            build: 'Checks: ',
+            state: 'Conflicts (draft)',
             pr: 'pr-url',
             reviews: '1 requested changes',
           }
@@ -124,7 +154,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expectedResult: {
             build: 'Checks: ',
-            mergeable: 'Unknown',
+            state: 'Unknown',
             pr: 'pr-url',
             reviews: '1 comment',
           }
@@ -139,7 +169,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           expectedResult: {
             build: 'Because it failed\n1 failure',
-            mergeable: 'Yes',
+            state: 'Yes',
             pr: 'pr-url',
             reviews: 'Not reviewed',
           }
