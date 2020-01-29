@@ -17,6 +17,23 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {}
       },
       {
+        status: { ahead: 0, behind: 0, tracking: null },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {}
+      },
+      {
+        status: { ahead: 0, behind: 0, tracking: null, diff_with_origin_master: { behind: 0 } },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {}
+      },
+      {
+        status: { tracking: null, modified: [], deleted: [], created: [], conflicted: [], diff_with_origin_master: { behind: 1 } },
+        expectedPull: { files: [], summary: {} },
+        expectedCalls: {
+          rebase: [[['origin/master', '--stat']]]
+        }
+      },
+      {
         status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
