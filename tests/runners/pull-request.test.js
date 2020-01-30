@@ -210,6 +210,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       [
         { contextParams: {}, expectedReviewers: null },
+        { contextParams: { reviewers: '' }, expectedReviewers: null },
         { contextParams: { reviewers: 'boss' }, expectedReviewers: ['boss'] },
         { contextParams: { reviewers: 'reviewer1,reviewer2' }, expectedReviewers: ['reviewer1', 'reviewer2'] },
         { contextParams: { collaborators: 'rev1' }, expectedReviewers: ['rev1'] },
@@ -394,24 +395,45 @@ function testSuiteFactory(setupHooks, testParams) {
         });
       });
 
-      it('Should allow to edit the content of the PR title and desciption', async () => {
-        const context = createFixtureContext('repo-84');
-        context.config.m = true;
-        context.pullRequestsPerRepo = genRepoMapWithValues(['foo-repo']);
-        context.pullRequestsParams = { title: 'Original title' };
+      [
+        {
+          title: 'with both a title and a body',
+          editedResult:{ title: 'Edited title', body: 'Edited Body' }
+        },
+        {
+          title: 'with only a title',
+          editedResult: { title: 'Edited title' }
+        },
+        {
+          title: 'with only a body',
+          editedResult: { body: 'Edited body' }
+        },
+        {
+          title: 'with nothing',
+          editedResult: {}
+        }
+      ].forEach((scenario) => {
 
-        mocks.editor.editPRDescription.mockImplementationOnce(() => ({ title: 'Edited title', body: 'Edited Body ' }));
-        await prBodyGeneration.runner(context);
+        it('Should allow to edit the content of the PR title and desciption - ' + scenario.title, async () => {
+          const context = createFixtureContext('repo-84');
+          context.config.m = true;
+          context.pullRequestsPerRepo = genRepoMapWithValues(['foo-repo']);
+          context.pullRequestsParams = { title: 'Original title' };
 
-        expect(mocks.editor.editPRDescription.mock.calls).toEqual([
-          [
-            {
-              body: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)',
-              title: 'Original title'
-            }
-          ]
-        ]);
-        expect(context.pullRequestsFinalDescription).toEqual({ title: 'Edited title', body: 'Edited Body ' });
+          const expectedDescription = clone(scenario.editedResult);
+          mocks.editor.editPRDescription.mockImplementationOnce(() => scenario.editedResult);
+          await prBodyGeneration.runner(context);
+
+          expect(mocks.editor.editPRDescription.mock.calls).toEqual([
+            [
+              {
+                body: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)',
+                title: 'Original title'
+              }
+            ]
+          ]);
+          expect(context.pullRequestsFinalDescription).toEqual(expectedDescription);
+        });
       });
     });
 
