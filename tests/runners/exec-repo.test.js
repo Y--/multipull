@@ -37,7 +37,9 @@ function testSuiteFactory(setupHooks, testParams) {
       const fixtureContext = createFixtureContext(REPO_NAME);
       fixtureContext.config.exec = 'foo-command bar-args';
       const someError = new Error();
-      mocks.utils.exec.mockImplementation(() => { throw someError; });
+      mocks.utils.exec.mockImplementation(() => {
+        throw someError;
+      });
       const res = await execRepo(fixtureContext, REPO_NAME);
       expect(res).toEqual(someError);
       expectDebugCalls();

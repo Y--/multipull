@@ -4,6 +4,7 @@
   "description": "Pull multiple git repositories",
   "main": "pullRepos.js",
   "scripts": {
+    "format": "prettier --write './**/*.js' '*.js'",
     "lint": "./node_modules/.bin/eslint '**/*.js'",
     "release": "npm version patch && npm publish",
     "test": "./node_modules/.bin/jest"

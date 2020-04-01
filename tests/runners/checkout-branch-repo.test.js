@@ -14,48 +14,47 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         currentBranch: 'master',
         expectedCalls: {
-          checkout: [['master']]
-        }
+          checkout: [['master']],
+        },
       },
       {
         currentBranch: 'master',
-        workingBranch: 'foo-branch'
+        workingBranch: 'foo-branch',
       },
       {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
         checkoutErr: 'some exception',
-        expectedErr: /some exception/
+        expectedErr: /some exception/,
       },
       {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
-        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
+        checkoutErr: "pathspec 'foo-branch' did not match any file",
         expectedCalls: {
-          status: [[], []]
-        }
+          status: [[], []],
+        },
       },
       {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
         defaultBranch: 'foo-branch',
-        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
+        checkoutErr: "pathspec 'foo-branch' did not match any file",
         expectedCalls: {
-          status: [[]]
-        }
+          status: [[]],
+        },
       },
       {
         currentBranch: 'bar-branch',
         workingBranch: 'foo-branch',
-        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
+        checkoutErr: "pathspec 'foo-branch' did not match any file",
         expectedCalls: {
           status: [[], []],
           checkout: [['foo-branch'], ['master']],
-          raw: [[['rev-list', '--left-right', 'origin/master...bar-branch']]]
-        }
-      }
+          raw: [[['rev-list', '--left-right', 'origin/master...bar-branch']]],
+        },
+      },
     ].forEach(({ currentBranch, workingBranch, defaultBranch, expectedCalls = {}, checkoutErr, expectedErr }) => {
-
       const suffix = checkoutErr ? ` and 'checkout' throws '${checkoutErr}'` : '';
       const statusStr = JSON.stringify({ currentBranch, workingBranch, defaultBranch });
       it(`Should checkout the branch when ${statusStr}${suffix}`, async () => {
@@ -65,13 +64,14 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.stashList.mockImplementationOnce(() => stash);
 
         if (checkoutErr) {
-          mocks.sg.checkout.mockImplementationOnce(() => { throw new Error(checkoutErr); });
+          mocks.sg.checkout.mockImplementationOnce(() => {
+            throw new Error(checkoutErr);
+          });
         }
 
         const branches = defaultBranch ? REPO_NAME + ':' + defaultBranch : '';
         const fixtureContext = createFixtureContext(REPO_NAME, branches);
         fixtureContext.setWorkingBranch(workingBranch);
-
 
         expectedCalls.fetch = [[['--all']]];
         expectedCalls.checkout = expectedCalls.checkout || [['foo-branch']];

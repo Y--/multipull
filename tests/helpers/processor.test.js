@@ -38,7 +38,7 @@ function testSuiteFactory(setupHooks) {
     it('should evaluate the title function', async () => {
       const mockRunner = jest.fn((context, repoName) => 'result for ' + repoName);
       const processor = new Processor(fixtureContext, [
-        { runner: mockRunner, title: (context) => 'Task in ' + context.rootDir }
+        { runner: mockRunner, title: (context) => 'Task in ' + context.rootDir },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
@@ -52,7 +52,6 @@ function testSuiteFactory(setupHooks) {
       expect(mocks.logger.logInfo.mock.calls).toEqual([[`Task in ${fixtureContext.rootDir}`]]);
     });
 
-
     it('should return an error if the spec is invalid', async () => {
       expect(() => new Processor(fixtureContext, 42)).toThrowError(/Invalid specification: 42/);
     });
@@ -62,7 +61,7 @@ function testSuiteFactory(setupHooks) {
       const mockRunner2 = jest.fn((context, repoName) => 'result for ' + repoName);
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1' },
-        { runner: mockRunner2, title: 'Step 2' }
+        { runner: mockRunner2, title: 'Step 2' },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
@@ -86,12 +85,12 @@ function testSuiteFactory(setupHooks) {
       const mockRunner2 = jest.fn((context, repoName) => repoName);
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1' },
-        { runner: mockRunner2, title: 'Step 2' }
+        { runner: mockRunner2, title: 'Step 2' },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
 
-      mocks.sg.stashList.mockImplementation(() => ({ total: 0 })) ;
+      mocks.sg.stashList.mockImplementation(() => ({ total: 0 }));
       mocks.sg.status.mockImplementation(() => ({ current: 'master' }));
       const results = await processor.run();
       expect(results).toHaveLength(3);
@@ -110,11 +109,13 @@ function testSuiteFactory(setupHooks) {
     });
 
     it('should interrupt processor if an error occurs during a single step', async () => {
-      const mockRunner1 = jest.fn(() => { throw new Error('Failed'); });
+      const mockRunner1 = jest.fn(() => {
+        throw new Error('Failed');
+      });
       const mockRunner2 = jest.fn((context, repoName) => repoName);
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1', single: true },
-        { runner: mockRunner2, title: 'Step 2' }
+        { runner: mockRunner2, title: 'Step 2' },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
@@ -137,7 +138,7 @@ function testSuiteFactory(setupHooks) {
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1' },
         { runner: mockSingle, title: 'Single', single: true },
-        { runner: mockRunner2, title: 'Step 2' }
+        { runner: mockRunner2, title: 'Step 2' },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);
@@ -155,9 +156,9 @@ function testSuiteFactory(setupHooks) {
         const [actualCtx, actualPreviousResults] = callArgs;
         expect(actualCtx).toEqual(fixtureContext);
         expect(actualPreviousResults).toMatchObject([
-          { elapsed: expect.any(Number), repo: 'repo-1',  res: 'step1 for repo-1'  },
+          { elapsed: expect.any(Number), repo: 'repo-1', res: 'step1 for repo-1' },
           { elapsed: expect.any(Number), repo: 'repo-42', res: 'step1 for repo-42' },
-          { elapsed: expect.any(Number), repo: 'repo-84', res: 'step1 for repo-84' }
+          { elapsed: expect.any(Number), repo: 'repo-84', res: 'step1 for repo-84' },
         ]);
       }
 
@@ -175,7 +176,7 @@ function testSuiteFactory(setupHooks) {
       const mockRunner2 = jest.fn((context, repoName) => 'not for ' + repoName);
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1' },
-        { runner: mockRunner2, title: 'Step 2' }
+        { runner: mockRunner2, title: 'Step 2' },
       ]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(0);

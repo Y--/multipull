@@ -11,7 +11,7 @@ const [
   selectRepositories,
   prCreation,
   prBodyGeneration,
-  prBodyUpdate
+  prBodyUpdate,
 ] = pullRequestRunnerSpec;
 
 setupTests(testSuiteFactory);
@@ -37,24 +37,24 @@ function testSuiteFactory(setupHooks, testParams) {
       [
         {
           title: 'Should look for the current branch and not find anything if it is not a git repository',
-          lsRemoteResult: { stderr: 'fatal: No remote configured to list refs from.' }
+          lsRemoteResult: { stderr: 'fatal: No remote configured to list refs from.' },
         },
         {
           title: 'Should look not find the branch if git ls-remote does not return the right url (1)',
-          lsRemoteResult: { stdout: 'not an url' }
+          lsRemoteResult: { stdout: 'not an url' },
         },
         {
           title: 'Should look not find the branch if git ls-remote does not return the right url (2)',
-          lsRemoteResult: { stdout: 'not an url/' }
+          lsRemoteResult: { stdout: 'not an url/' },
         },
         {
           title: 'Should look not find the branch if it is not among the defined repositories',
-          lsRemoteResult: { stdout: 'git@github.com:username/reponame' }
+          lsRemoteResult: { stdout: 'git@github.com:username/reponame' },
         },
         {
           title: 'Should look not find the branch if it is not among the defined repositories',
-          lsRemoteResult: { stdout: 'git@github.com:username/otherrepo.git' }
-        }
+          lsRemoteResult: { stdout: 'git@github.com:username/otherrepo.git' },
+        },
       ].forEach((scenario) => {
         it(scenario.title, async () => {
           mocks.utils.exec.mockImplementationOnce(() => scenario.lsRemoteResult);
@@ -82,7 +82,7 @@ function testSuiteFactory(setupHooks, testParams) {
         'https://github.com/username/repo-84.git',
         'https://github.com/username/repo-84.git\n',
         'https://github.com/username/repo-84',
-        'https://github.com/username/repo-84\n'
+        'https://github.com/username/repo-84\n',
       ].forEach((lsRemoteResult) => {
         it(`Should proceed if git ls-remote returns "${lsRemoteResult}"`, async () => {
           expect(fixtureContext.getWorkingBranch()).toEqual(null);
@@ -95,7 +95,7 @@ function testSuiteFactory(setupHooks, testParams) {
           expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
           expect(mocks.utils.exec.mock.calls).toEqual([
             ['git ls-remote --get-url'],
-            ['git rev-parse --abbrev-ref HEAD']
+            ['git rev-parse --abbrev-ref HEAD'],
           ]);
           expect(fixtureContext.getWorkingBranch()).toEqual('foo-branch');
         });
@@ -156,7 +156,7 @@ function testSuiteFactory(setupHooks, testParams) {
           genCheckoutResult('repo-01', 'master'),
           genCheckoutResult('repo-42', 'bar-branch'),
           genCheckoutResult('repo-84', 'foo-branch'),
-          genCheckoutResult('repo-10', 'foo-branch')
+          genCheckoutResult('repo-10', 'foo-branch'),
         ]);
 
         expect(fixtureContext.pullRequestsPerRepo).toEqual(genRepoMap(['repo-10', 'repo-84']));
@@ -171,7 +171,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.pullRequestsPerRepo).toBeUndefined();
         expect(fixtureContext.isInterrupted()).toEqual(true);
-        expectLogs([['Cannot find any repository with branch \'old-branch\'.']]);
+        expectLogs([["Cannot find any repository with branch 'old-branch'."]]);
       });
 
       it('Should interrupt the process if the user refuse the selection', async () => {
@@ -203,7 +203,7 @@ function testSuiteFactory(setupHooks, testParams) {
           body: '',
           draft: true,
           head: 'foo-branch',
-          title: 'PR from `foo-branch` in `repo-84`'
+          title: 'PR from `foo-branch` in `repo-84`',
         });
         expectLogs([]);
       });
@@ -218,9 +218,9 @@ function testSuiteFactory(setupHooks, testParams) {
         {
           contextParams: { collaborators: 'rev1,rev2,rev3' },
           expectedReviewers: ['rev1', 'rev2'],
-          expectPickRandom: true
+          expectPickRandom: true,
         },
-        { contextParams: { reviewers: 'boss', collaborators: 'rev1,rev2' }, expectedReviewers: ['boss'] }
+        { contextParams: { reviewers: 'boss', collaborators: 'rev1,rev2' }, expectedReviewers: ['boss'] },
       ].forEach(({ contextParams, expectedReviewers, expectPickRandom }) => {
         const expectedMessage = 'PR from `foo-branch` in `repo-84`';
         const prDesc = `title:${expectedMessage}, reviewers:${expectedReviewers}`;
@@ -332,7 +332,7 @@ function testSuiteFactory(setupHooks, testParams) {
           base: 'master',
           body: '',
           head: 'foo-branch',
-          title: 'PR on `foo-branch` for `repo-84`'
+          title: 'PR on `foo-branch` for `repo-84`',
         };
         context.workingBranch = 'foo-branch';
 
@@ -359,23 +359,23 @@ function testSuiteFactory(setupHooks, testParams) {
       [
         {
           pullRequestsPerRepo: new Map(),
-          expectedPullRequestBody: undefined
+          expectedPullRequestBody: undefined,
         },
         {
           pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
-          expectedPullRequestBody: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)'
+          expectedPullRequestBody: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)',
         },
         {
           pullRequestsPerRepo: genRepoMapWithValues(['repo1', 'repo2']),
           expectedPullRequestBody:
-            'Pull request in 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)'
+            'Pull request in 2 repositories:\n* `repo1` : [repo1-pr-url](repo1-pr-url)\n* `repo2` : [repo2-pr-url](repo2-pr-url)',
         },
         {
           pullRequestsPerRepo: genRepoMapWithValues(['foo-repo']),
           workingBranch: 'foo-bar-123456789',
           expectedPullRequestBody:
-            'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)\n\n\nRelated issue: https://www.pivotaltracker.com/story/show/123456789'
-        }
+            'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)\n\n\nRelated issue: https://www.pivotaltracker.com/story/show/123456789',
+        },
       ].forEach((scenario) => {
         const pullRequestsPerRepoStr = JSON.stringify(Array.from(scenario.pullRequestsPerRepo));
         const expected = scenario.expectedPullRequestBody
@@ -398,22 +398,21 @@ function testSuiteFactory(setupHooks, testParams) {
       [
         {
           title: 'with both a title and a body',
-          editedResult:{ title: 'Edited title', body: 'Edited Body' }
+          editedResult: { title: 'Edited title', body: 'Edited Body' },
         },
         {
           title: 'with only a title',
-          editedResult: { title: 'Edited title' }
+          editedResult: { title: 'Edited title' },
         },
         {
           title: 'with only a body',
-          editedResult: { body: 'Edited body' }
+          editedResult: { body: 'Edited body' },
         },
         {
           title: 'with nothing',
-          editedResult: {}
-        }
+          editedResult: {},
+        },
       ].forEach((scenario) => {
-
         it('Should allow to edit the content of the PR title and desciption - ' + scenario.title, async () => {
           const context = createFixtureContext('repo-84');
           context.config.m = true;
@@ -428,9 +427,9 @@ function testSuiteFactory(setupHooks, testParams) {
             [
               {
                 body: 'Pull request in 1 repository:\n* `foo-repo` : [foo-repo-pr-url](foo-repo-pr-url)',
-                title: 'Original title'
-              }
-            ]
+                title: 'Original title',
+              },
+            ],
           ]);
           expect(context.pullRequestsFinalDescription).toEqual(expectedDescription);
         });
@@ -460,7 +459,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should add the error if it finds one', async () => {
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         fixtureContext.pullRequestsPerRepo = new Map([
-          ['repo-84', { html_url: 'repo-pr-url/123', number: 123, errors: ['foo'] }]
+          ['repo-84', { html_url: 'repo-pr-url/123', number: 123, errors: ['foo'] }],
         ]);
         fixtureContext.pullRequestsFinalDescription = { body: 'updated body' };
         const result = await prBodyUpdate.runner(fixtureContext, 'repo-84');

@@ -19,7 +19,7 @@ const ghRepoFunctionNames = [
   'getReviews',
   'listPullRequests',
   'mergePullRequest',
-  'updatePullRequest'
+  'updatePullRequest',
 ];
 for (const funcName of ghRepoFunctionNames) {
   mockGHRepo[funcName] = jest.fn();
@@ -29,7 +29,7 @@ jest.mock('github-api', () =>
   jest.fn().mockImplementation(() => ({
     getRepo() {
       return mockGHRepo;
-    }
+    },
   }))
 );
 
@@ -45,7 +45,7 @@ gitHelper.initSimpleGit = () => sg;
 const mockedUtils = {
   exec: jest.fn(),
   getYNAnswer: jest.fn(),
-  pickRandom: jest.fn()
+  pickRandom: jest.fn(),
 };
 
 const utils = require('../lib/helpers/utils');
@@ -57,7 +57,7 @@ const editor = require('../lib/helpers/message-editor');
 const progress = { tick: mockProgressTick };
 exports.mocks = { debug: mockDebug, editor, utils, logger, progress, sg, ghRepo: mockGHRepo };
 
-exports.useOriginalUtils = function() {
+exports.useOriginalUtils = function () {
   Object.assign(utils, originalUtils);
 };
 

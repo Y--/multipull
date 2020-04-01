@@ -15,58 +15,57 @@ function testSuiteFactory(setupHooks, testParams) {
         status: { ahead: 0, behind: 0, current: 'master', tracking: 'origin/master' },
         cmdLineArgs: {},
         expectedPushed: '',
-        expectedPushCall: null
+        expectedPushCall: null,
       },
       {
         status: { ahead: 42, behind: 0, current: 'master', tracking: 'origin/master' },
         cmdLineArgs: {},
         expectedPushed: 'Yes',
-        expectedPushCall: []
+        expectedPushCall: [],
       },
       {
         status: { ahead: 1, behind: 3, current: 'master', tracking: 'origin/master' },
         cmdLineArgs: {},
-        expectedPushed: 'No (\'master\' is behind 3 commits from \'origin/master\')',
-        expectedPushCall: null
+        expectedPushed: "No ('master' is behind 3 commits from 'origin/master')",
+        expectedPushCall: null,
       },
       {
         status: { ahead: 3, behind: 0, current: 'foo-branch', tracking: undefined },
         cmdLineArgs: {},
         expectedPushed: 'Yes',
-        expectedPushCall: ['--set-upstream', 'origin', 'foo-branch']
+        expectedPushCall: ['--set-upstream', 'origin', 'foo-branch'],
       },
       {
         status: { ahead: 3, behind: 0, current: 'foo-branch', tracking: 'origin/foo-branch' },
         cmdLineArgs: { force: true },
         expectedPushed: 'Yes',
-        expectedPushCall: []
+        expectedPushCall: [],
       },
       {
         status: { ahead: 3, behind: 1, current: 'foo-branch', tracking: 'origin/foo-branch' },
         cmdLineArgs: { force: true },
         expectedPushed: 'Yes (forced)',
-        expectedPushCall: ['--force']
+        expectedPushCall: ['--force'],
       },
       {
         status: { ahead: 0, behind: 0, current: 'HEAD', tracking: null },
         cmdLineArgs: { force: true },
         expectedPushed: 'No (detached HEAD)',
-        expectedPushCall: null
+        expectedPushCall: null,
       },
       {
         status: { ahead: 0, behind: 0, current: 'HEAD', tracking: null },
         cmdLineArgs: {},
         expectedPushed: 'No (detached HEAD)',
-        expectedPushCall: null
+        expectedPushCall: null,
       },
       {
         status: { ahead: 3, behind: 0, current: 'foo-branch', tracking: 'origin/foo-branch' },
         cmdLineArgs: { dry: true },
         expectedPushed: 'Dry: git push ',
-        expectedPushCall: null
-      }
+        expectedPushCall: null,
+      },
     ].forEach(({ cmdLineArgs, status, expectedPushed, expectedPushCall }) => {
-
       const suffix = `and parmeters ${JSON.stringify(cmdLineArgs)}`;
       it(`Should return ${expectedPushed} when status is ${JSON.stringify(status)} ${suffix}`, async () => {
         const stash = { all: [], latest: null, total: 0 };

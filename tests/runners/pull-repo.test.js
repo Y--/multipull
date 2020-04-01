@@ -14,31 +14,38 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         status: { ahead: 0, behind: 0 },
         expectedPull: { files: [], summary: {} },
-        expectedCalls: {}
+        expectedCalls: {},
       },
       {
         status: { ahead: 0, behind: 0, tracking: null },
         expectedPull: { files: [], summary: {} },
-        expectedCalls: {}
+        expectedCalls: {},
       },
       {
         status: { ahead: 0, behind: 0, tracking: null, diff_with_origin_master: { behind: 0 } },
         expectedPull: { files: [], summary: {} },
-        expectedCalls: {}
+        expectedCalls: {},
       },
       {
-        status: { tracking: null, modified: [], deleted: [], created: [], conflicted: [], diff_with_origin_master: { behind: 1 } },
+        status: {
+          tracking: null,
+          modified: [],
+          deleted: [],
+          created: [],
+          conflicted: [],
+          diff_with_origin_master: { behind: 1 },
+        },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
-          rebase: [[['origin/master', '--stat']]]
-        }
+          rebase: [[['origin/master', '--stat']]],
+        },
       },
       {
         status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
-          pull: [[null, null, { '--all': null, '--stat': null }]]
-        }
+          pull: [[null, null, { '--all': null, '--stat': null }]],
+        },
       },
       {
         status: { ahead: 0, behind: 1, modified: [1], deleted: [], created: [], conflicted: [] },
@@ -46,8 +53,8 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {
           pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { ahead: 0, behind: 1, modified: [], deleted: [2], created: [], conflicted: [] },
@@ -55,8 +62,8 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {
           pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [3], conflicted: [] },
@@ -64,8 +71,8 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {
           pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { ahead: 0, behind: 1, modified: [], deleted: [], created: [], conflicted: [4] },
@@ -74,15 +81,15 @@ function testSuiteFactory(setupHooks, testParams) {
           pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
           rebase: null,
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { ahead: 1, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
-          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]]
-        }
+          pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
+        },
       },
       {
         status: { ahead: 1, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
@@ -90,9 +97,9 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedPull: { files: ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFLICTS ***'], summary: {} },
         expectedCalls: {
           pull: [[null, null, { '--all': null, '--rebase': null, '--stat': null }]],
-          rebase: [[{ '--abort': null }]]
-        }
-      }
+          rebase: [[{ '--abort': null }]],
+        },
+      },
     ].forEach(({ status, pullWillFail, expectedPull, expectedCalls }) => {
       status.current = 'master';
 

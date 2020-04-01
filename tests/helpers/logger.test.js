@@ -2,7 +2,6 @@ const logger = require('../../lib/helpers/logger');
 const colors = require('colors/safe');
 
 describe('Logger', () => {
-
   const spies = {};
   beforeEach(() => {
     for (const level of ['log', 'error']) {

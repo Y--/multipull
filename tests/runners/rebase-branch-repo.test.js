@@ -13,13 +13,13 @@ function testSuiteFactory(setupHooks, testParams) {
     [
       {
         status: { ahead: 0, behind: 0, current: 'master' },
-        expectedCalls: {}
+        expectedCalls: {},
       },
       {
         status: { current: 'foo' },
         expectedCalls: {
-          raw: [[['rev-list', '--left-right', 'origin/master...foo']]]
-        }
+          raw: [[['rev-list', '--left-right', 'origin/master...foo']]],
+        },
       },
       {
         status: { current: 'foo', modified: [], deleted: [], created: [], conflicted: [] },
@@ -29,11 +29,11 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['rev-list', '--left-right', 'origin/master...foo']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
-          diffSummary: [[['foo...origin/master']]]
-        }
+          diffSummary: [[['foo...origin/master']]],
+        },
       },
       {
         status: { current: 'foo', tracking: 'bar', modified: [], deleted: [], created: [], conflicted: [] },
@@ -43,11 +43,11 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['rev-list', '--left-right', 'origin/master...foo']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
-          diffSummary: [[['foo...origin/foo']]]
-        }
+          diffSummary: [[['foo...origin/foo']]],
+        },
       },
       {
         status: { current: 'foo', modified: [2], deleted: [], created: [], conflicted: [] },
@@ -57,13 +57,13 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['rev-list', '--left-right', 'origin/master...foo']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
           diffSummary: [[['foo...origin/master']]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { current: 'foo', modified: [2], deleted: [], created: [], conflicted: [] },
@@ -74,13 +74,13 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['rev-list', '--left-right', 'origin/master...foo']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
           diffSummary: [[['foo...origin/master']]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
       },
       {
         status: { current: 'foo', modified: [2], deleted: [], created: [], conflicted: [] },
@@ -91,13 +91,13 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['rev-list', '--left-right', 'origin/master...foo']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']], [{ '--abort': null }]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
-          reset: [[['--soft', 'HEAD~1']], [['HEAD']]]
-        }
-      }
+          reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
+        },
+      },
     ].forEach(({ status, revList, rebaseWillFail, diffSummaryWillFail, expectedCalls }) => {
       const suffix = `status is ${JSON.stringify(status)}`;
       it(`Should return when ${suffix}`, async () => {

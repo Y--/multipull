@@ -66,7 +66,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } }
+          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
         });
 
         expectDebugCalls();
@@ -87,7 +87,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: false,
           pr: { html_url: 'pr-url' },
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' }, pr: 'pr-url' }
+          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' }, pr: 'pr-url' },
         });
 
         expectDebugCalls();
@@ -109,7 +109,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } }
+          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
         });
 
         expectDebugCalls();
@@ -134,8 +134,8 @@ function testSuiteFactory(setupHooks, testParams) {
             merged: 'Dry',
             pr: 'pr-url',
             stash: { all: [], latest: null, total: 0 },
-            status: { current: 'master' }
-          }
+            status: { current: 'master' },
+          },
         });
 
         expectDebugCalls();
@@ -227,7 +227,7 @@ function testSuiteFactory(setupHooks, testParams) {
           commit_message: '',
           commit_title: 'Merge pull request #42 from head-label/head-ref',
           merge_method: 'merge',
-          sha: 33
+          sha: 33,
         };
 
         expect(mocks.ghRepo.mergePullRequest.mock.calls).toEqual([[42, expectedMergeArgs]]);
@@ -238,7 +238,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const head = { sha: 33, label: 'head-label', ref: 'head-ref' };
         fixtureContext.setRepoContext('repo-84', { result: { hello: 'world' }, pr: { number: 42, head } });
         mocks.ghRepo.mergePullRequest.mockImplementationOnce(() => ({
-          data: { merged: false, message: 'merge failed' }
+          data: { merged: false, message: 'merge failed' },
         }));
 
         const result = await runner(fixtureContext, 'repo-84');
@@ -248,7 +248,7 @@ function testSuiteFactory(setupHooks, testParams) {
           commit_message: '',
           commit_title: 'Merge pull request #42 from head-label/head-ref',
           merge_method: 'merge',
-          sha: 33
+          sha: 33,
         };
 
         expect(mocks.ghRepo.mergePullRequest.mock.calls).toEqual([[42, expectedMergeArgs]]);
