@@ -125,6 +125,10 @@ Use this parameter to edit the pull request description
 
 eg.: `multipr --m`
 
+#### Parameter `approve`
+
+Submit an `APPROVE` review on the current pull request.
+
 ### multipull
 
 Execute `git pull` all repositories.
