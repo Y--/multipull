@@ -1,0 +1,76 @@
+#! /usr/bin/env node
+
+const rc = require('rc');
+const tabtab = require('tabtab');
+const child_process = require('child_process');
+
+const completers = {
+  multistatus(env) {
+    if (env.prev === '--pr') {
+      return tabtab.log(['--list', '--open']);
+    }
+
+    return tabtab.log(['--pr', '--ci']);
+  },
+  multipush() {
+    return tabtab.log(['--force']);
+  },
+  multipr(env) {
+    if (env.prev.startsWith('--reviewers')) {
+      const reviewers = env.prev.slice('--reviewers'.length + 1);
+      return tabtab.log(getSuggestedReviewers(reviewers));
+    }
+
+    return tabtab.log(['--collaborators=', '--m:amend your PR description']); // , '--reviewers='
+  },
+  multicheckout() {
+    child_process.exec('git branch -l --format=\'%(refname:short)\'', { cwd: process.cwd() }, (err, res) => {
+      if (err) {
+        throw err;
+      }
+
+      return tabtab.log(res.split('\n'));
+    });
+    //
+  }
+};
+
+function getSuggestedReviewers(reviewers) {
+  const prevRevs = new Set(reviewers.split(','));
+  const config = rc('multipull');
+  const candidates = config && config.collaborators;
+
+  if (!candidates) {
+    return [];
+  }
+
+  const suggestions = [];
+  for (const candidate of candidates.split(',')) {
+    if (!prevRevs.has(candidate)) {
+      suggestions.push(candidate);
+    }
+  }
+
+  return suggestions;
+}
+
+function processCompletion() {
+  const env = tabtab.parseEnv(process.env);
+  const commandBeingCompleted = getCommandBeingCompleted();
+  const completer = completers[commandBeingCompleted] || (() => {});
+  return completer(env);
+}
+
+function getCommandBeingCompleted() {
+  if (process.argv[2] !== 'completion') {
+    throw new Error(`Invalid usage: '${JSON.stringify(process.argv)}', ${process.argv[2]} !== 'completion'`);
+  }
+
+  if (process.argv[3] !== '--') {
+    throw new Error(`Invalid usage: '${JSON.stringify(process.argv)}', ${process.argv[2]} !== 'completion'`);
+  }
+
+  return process.argv[4];
+}
+
+processCompletion();

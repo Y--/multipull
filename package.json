@@ -35,12 +35,13 @@
     "github-api": "^3.2.2",
     "progress": "^2.0.3",
     "rc": "^1.2.7",
-    "simple-git": "^1.131.0"
+    "simple-git": "^1.132.0",
+    "tabtab": "^3.0.2"
   },
   "devDependencies": {
     "eslint": "^6.2.1",
-    "eslint-plugin-jest": "^23.6.0",
-    "jest": "^25.1.0",
-    "prettier": "^1.18.2"
+    "eslint-plugin-jest": "^23.8.2",
+    "jest": "^25.2.4",
+    "prettier": "^2.0.2"
   }
 }
