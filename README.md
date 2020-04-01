@@ -26,6 +26,10 @@ Example:
   "repos": ["an", "array", "of", "repositories", "in", "root"],
   "branches": {
     "my-repo1": "my-default-branch"
+  },
+  "issueTracker": {
+    "issueIdPattern": "[0-9]{9}",
+    "urlPrefix": "https://www.pivotaltracker.com/story/show/"
   }
 }
 ```
