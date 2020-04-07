@@ -234,7 +234,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.pullRequestsPerRepo).toBeUndefined();
         expect(fixtureContext.isInterrupted()).toEqual(true);
-        expectLogs([["Cannot find any repository with branch 'old-branch'."]]);
+        expectLogs([['Cannot find any repository with branch \'old-branch\'.']]);
       });
 
       it('Should interrupt the process if the user refuse the selection', async () => {

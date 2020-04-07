@@ -30,7 +30,7 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
-        checkoutErr: "pathspec 'foo-branch' did not match any file",
+        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[], []],
         },
@@ -39,7 +39,7 @@ function testSuiteFactory(setupHooks, testParams) {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
         defaultBranch: 'foo-branch',
-        checkoutErr: "pathspec 'foo-branch' did not match any file",
+        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[]],
         },
@@ -47,7 +47,7 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         currentBranch: 'bar-branch',
         workingBranch: 'foo-branch',
-        checkoutErr: "pathspec 'foo-branch' did not match any file",
+        checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[], []],
           checkout: [['foo-branch'], ['master']],
