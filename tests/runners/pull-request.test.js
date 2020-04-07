@@ -3,8 +3,6 @@ const { createFixtureContext, setupTests } = require('../utils');
 const pullRequestRunnerSpec = require('../../lib/runners/pull-request');
 const colors = require('colors/safe');
 
-const fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
-
 const [
   validateParameters,
   checkoutStep,
@@ -20,12 +18,9 @@ function testSuiteFactory(setupHooks, testParams) {
   describe('Pull Request', () => {
     setupHooks();
 
+    let fixtureContext = null;
     beforeEach(() => {
-      fixtureContext.workingBranch = null;
-      fixtureContext.interrupted = false;
-      fixtureContext.config = {};
-      delete fixtureContext.pullRequestsPerRepo;
-      delete fixtureContext.pullRequestsFinalDescription;
+      fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
     });
 
     describe('Parameters validation', () => {
@@ -160,6 +155,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should return `branch: true` and the pr with reviews if it is found', async () => {
         fixtureContext.workingBranch = 'foo-branch';
         mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([{ number: 42 }]));
         mocks.ghRepo.getReviews.mockImplementationOnce(() => wrapGHResponse([{ review: 'fake' }]));
 
@@ -167,6 +163,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(res).toEqual({ branch: true, pr: { number: 42, reviews: [{ review: 'fake' }] } });
 
         expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
@@ -184,6 +181,7 @@ function testSuiteFactory(setupHooks, testParams) {
         fixtureContext.workingBranch = 'foo-branch';
         fixtureContext.config.approve = true;
         mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([{ number: 42 }]));
         mocks.ghRepo.approveReviewRequest.mockImplementationOnce(() => wrapGHResponse([{ review: 'fake' }]));
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
@@ -194,6 +192,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.interrupted).toEqual(true);
 
         expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
