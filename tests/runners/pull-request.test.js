@@ -207,7 +207,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('Repository & reviewers selection', () => {
+    describe.skip('Repository & reviewers selection', () => {
       const { runner } = selectRepositories;
 
       it('Should select the repo that have the existing branch', async () => {
@@ -314,7 +314,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('PR creation', () => {
+    describe.skip('PR creation', () => {
       const { runner } = prCreation;
       beforeEach(() => {
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
@@ -418,7 +418,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('PR body generation', () => {
+    describe.skip('PR body generation', () => {
       [
         {
           pullRequestsPerRepo: new Map(),
@@ -499,7 +499,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
 
-    describe('PR body update', () => {
+    describe.skip('PR body update', () => {
       it('Should not update the PR body if the repo is not in the list', async () => {
         fixtureContext.pullRequestsPerRepo = new Map();
 
