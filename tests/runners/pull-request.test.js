@@ -23,6 +23,7 @@ function testSuiteFactory(setupHooks, testParams) {
     beforeEach(() => {
       fixtureContext.workingBranch = null;
       fixtureContext.interrupted = false;
+      fixtureContext.config = {};
       delete fixtureContext.pullRequestsPerRepo;
       delete fixtureContext.pullRequestsFinalDescription;
     });
@@ -121,26 +122,89 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(actualTitle).toMatch(/foo-branch/);
       });
 
-      it('Should return true if "git rev-parse --verify" succeed', async () => {
-        fixtureContext.workingBranch = 'foo-branch';
-        mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
-
-        const res = await runner(fixtureContext, 'repo-84');
-        expect(res).toEqual(true);
-
-        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
-      });
-
-      it('Should return false if "git rev-parse --verify" fails', async () => {
+      it('Should return `branch: false` if "git rev-parse --verify" fails', async () => {
         fixtureContext.workingBranch = 'foo-branch';
         mocks.sg.revparse.mockImplementationOnce(() => {
           throw new Error();
         });
 
         const res = await runner(fixtureContext, 'repo-84');
-        expect(res).toEqual(false);
+        expect(res).toEqual({ branch: false });
 
         expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+      });
+
+      it('Should return `branch: true` and `pr: null` if no PR is found', async () => {
+        fixtureContext.workingBranch = 'foo-branch';
+        mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+        mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([]));
+
+        const res = await runner(fixtureContext, 'repo-84');
+        expect(res).toEqual({ branch: true, pr: null });
+
+        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
+          [
+            {
+              AcceptHeader: 'shadow-cat-preview',
+              base: 'master',
+              head: 'foo-owner:foo-branch',
+              state: 'open',
+            },
+          ],
+        ]);
+      });
+
+      it('Should return `branch: true` and the pr with reviews if it is found', async () => {
+        fixtureContext.workingBranch = 'foo-branch';
+        mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+        mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([{ number: 42 }]));
+        mocks.ghRepo.getReviews.mockImplementationOnce(() => wrapGHResponse([{ review: 'fake' }]));
+
+        const res = await runner(fixtureContext, 'repo-84');
+        expect(res).toEqual({ branch: true, pr: { number: 42, reviews: [{ review: 'fake' }] } });
+
+        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
+          [
+            {
+              AcceptHeader: 'shadow-cat-preview',
+              base: 'master',
+              head: 'foo-owner:foo-branch',
+              state: 'open',
+            },
+          ],
+        ]);
+        expect(mocks.ghRepo.getReviews.mock.calls).toEqual([[42]]);
+      });
+
+      it('Should approve PR if `--approve` is set and PR is found', async () => {
+        fixtureContext.workingBranch = 'foo-branch';
+        fixtureContext.config.approve = true;
+        mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
+        mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([{ number: 42 }]));
+        mocks.ghRepo.approveReviewRequest.mockImplementationOnce(() => wrapGHResponse([{ review: 'fake' }]));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
+        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+
+        const res = await runner(fixtureContext, 'repo-84');
+        expect(res.approved).toEqual(true);
+        expect(fixtureContext.interrupted).toEqual(true);
+
+        expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
+          [
+            {
+              AcceptHeader: 'shadow-cat-preview',
+              base: 'master',
+              head: 'foo-owner:foo-branch',
+              state: 'open',
+            },
+          ],
+        ]);
+        expect(mocks.ghRepo.approveReviewRequest.mock.calls).toEqual([[42]]);
       });
     });
 
@@ -521,5 +585,9 @@ function testSuiteFactory(setupHooks, testParams) {
   function expectLogs(logInfoCalls) {
     expect(mocks.logger.logInfo.mock.calls).toEqual(logInfoCalls);
     expect(mocks.logger.logError.mock.calls).toEqual([]);
+  }
+
+  function wrapGHResponse(data) {
+    return { data };
   }
 }

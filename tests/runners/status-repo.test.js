@@ -203,12 +203,12 @@ function testSuiteFactory(setupHooks, testParams) {
           mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
           mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
 
-          mocks.ghRepo.listPullRequests.mockImplementationOnce(() => createGHResponse(fixture.pullRequests));
+          mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse(fixture.pullRequests));
 
           if (fixture.pullRequests && fixture.pullRequests.length) {
-            mocks.ghRepo.getReviews.mockImplementationOnce(() => createGHResponse(fixture.reviews));
-            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
-            mocks.ghRepo.getPullRequest.mockImplementationOnce(() => createGHResponse(fixture.pullRequest));
+            mocks.ghRepo.getReviews.mockImplementationOnce(() => wrapGHResponse(fixture.reviews));
+            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => wrapGHResponse(fixture.combinedStatus));
+            mocks.ghRepo.getPullRequest.mockImplementationOnce(() => wrapGHResponse(fixture.pullRequest));
           }
 
           const res = await statusRepo(fixtureContext, REPO_NAME);
@@ -259,11 +259,11 @@ function testSuiteFactory(setupHooks, testParams) {
           mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
 
           mocks.ghRepo.listPullRequests.mockImplementationOnce(() =>
-            createGHResponse([{ number: 42, head: { sha: 33 } }])
+            wrapGHResponse([{ number: 42, head: { sha: 33 } }])
           );
-          mocks.ghRepo.getReviews.mockImplementationOnce(() => createGHResponse([]));
-          mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
-          mocks.ghRepo.getPullRequest.mockImplementationOnce(() => createGHResponse(fixture.pullRequest));
+          mocks.ghRepo.getReviews.mockImplementationOnce(() => wrapGHResponse([]));
+          mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => wrapGHResponse(fixture.combinedStatus));
+          mocks.ghRepo.getPullRequest.mockImplementationOnce(() => wrapGHResponse(fixture.pullRequest));
 
           await expect(statusRepo(fixtureContext, REPO_NAME)).rejects.toThrowError(expectedError);
         });
@@ -329,7 +329,7 @@ function testSuiteFactory(setupHooks, testParams) {
           mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
 
           if (fixture.pullRequests && fixture.pullRequests.length) {
-            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => createGHResponse(fixture.combinedStatus));
+            mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => wrapGHResponse(fixture.combinedStatus));
           }
 
           const res = await statusRepo(fixtureContext, REPO_NAME);
@@ -377,7 +377,7 @@ function testSuiteFactory(setupHooks, testParams) {
     });
   }
 
-  function createGHResponse(data) {
+  function wrapGHResponse(data) {
     return { data };
   }
 

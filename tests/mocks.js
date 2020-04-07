@@ -12,6 +12,7 @@ jest.mock('debug', () => jest.fn().mockImplementation(() => mockDebug));
 const mockGHRepo = {};
 
 const ghRepoFunctionNames = [
+  'approveReviewRequest',
   'createPullRequest',
   'createReviewRequest',
   'getCombinedStatus',
