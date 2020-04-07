@@ -116,6 +116,10 @@ A comma separated list of GitHub user ids can be provided to be added at the lis
 
 eg.: `multipr --reviewers=John,Jack`
 
+Note: a GitHub `team` can be assigned by prefixing its `slug` with `team/`:
+
+eg.: `multipr --reviewers=team/justice-league`
+
 #### Parameter `collaborators`
 
 A comma separated list of GitHub user ids can be provided to be added at the list of collaborators.
