@@ -3,6 +3,7 @@ const { createFixtureContext, setupTests } = require('../utils');
 const statusRepo = require('../../lib/runners/status-repo');
 
 const REPO_NAME = 'repo-1';
+const AcceptHeader = 'shadow-cat-preview';
 const fixtureContext = createFixtureContext(REPO_NAME);
 setupTests(testSuiteFactory);
 
@@ -78,7 +79,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'N/A. ',
+            buildStatus: 'N/A. ',
             state: 'Yes',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
@@ -93,7 +94,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'N/A. ',
+            buildStatus: 'N/A. ',
             state: 'draft',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
@@ -108,7 +109,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Checks: ',
+            buildStatus: 'Checks: ',
             state: 'Yes',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -123,7 +124,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Checks: ',
+            buildStatus: 'Checks: ',
             state: 'Conflicts',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -138,7 +139,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Checks: ',
+            buildStatus: 'Checks: ',
             state: 'Conflicts (draft)',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -153,7 +154,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Checks: ',
+            buildStatus: 'Checks: ',
             state: 'Unknown',
             pr: 'pr-url',
             reviews: '1 comment',
@@ -168,7 +169,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'Because it failed\n1 failure',
+            buildStatus: 'Because it failed\n1 failure',
             state: 'Yes',
             pr: 'pr-url',
             reviews: 'Not reviewed',
@@ -221,7 +222,7 @@ function testSuiteFactory(setupHooks, testParams) {
             )
           );
 
-          const expectedLsPRArgs = { base: 'master', head: 'foo-owner:foo-branch', state: 'open' };
+          const expectedLsPRArgs = { base: 'master', head: 'foo-owner:foo-branch', state: 'open', AcceptHeader };
           expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
 
           const prNumberCalls = fixture.pullRequests ? fixture.pullRequests.map((pr) => [pr.number]) : [];
@@ -239,7 +240,7 @@ function testSuiteFactory(setupHooks, testParams) {
             pullRequest: { html_url: 'pr-url', mergeable: 'wrong' },
           },
 
-          expectedError: "Invalid mergeable value 'wrong'",
+          expectedError: 'Invalid mergeable value \'wrong\'',
         },
         {
           fixture: {
@@ -247,7 +248,7 @@ function testSuiteFactory(setupHooks, testParams) {
             pullRequest: { html_url: 'pr-url', mergeable: null },
           },
 
-          expectedError: "Invalid state value 'not-a-state'",
+          expectedError: 'Invalid state value \'not-a-state\'',
         },
       ].forEach(({ fixture, expectedError }) => {
         it(`Should throw an error if the parameters are ${JSON.stringify(fixture)}: ${JSON.stringify(
@@ -304,7 +305,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'description\n1 failure\ntarget://url',
+            buildStatus: 'description\n1 failure\ntarget://url',
           },
         },
         {
@@ -317,7 +318,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            build: 'description. 1 pending - target://url',
+            buildStatus: 'description. 1 pending - target://url',
           },
         },
       ].forEach(({ fixture, expectedResult }) => {

@@ -92,7 +92,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
           await runner(fixtureContext);
 
-          expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
+          expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will work with pull requests on ${boldBranch}.`]]);
           expect(mocks.utils.exec.mock.calls).toEqual([
             ['git ls-remote --get-url'],
             ['git rev-parse --abbrev-ref HEAD'],
@@ -109,7 +109,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should say that it will processed if the parameters are correct', async () => {
         fixtureContext.workingBranch = 'foo-branch';
         await runner(fixtureContext);
-        expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will create pull requests on ${boldBranch}.`]]);
+        expect(mocks.logger.logInfo.mock.calls).toEqual([[`Will work with pull requests on ${boldBranch}.`]]);
       });
     });
 
