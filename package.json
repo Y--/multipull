@@ -40,9 +40,9 @@
     "tabtab": "^3.0.2"
   },
   "devDependencies": {
-    "eslint": "^6.2.1",
-    "eslint-plugin-jest": "^23.8.2",
-    "jest": "^25.2.7",
+    "eslint": "^7.2.0",
+    "eslint-plugin-jest": "^23.13.2",
+    "jest": "^26.0.1",
     "prettier": "^2.0.4"
   }
 }
