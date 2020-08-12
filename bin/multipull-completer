@@ -25,11 +25,15 @@ const completers = {
   },
   multicheckout() {
     child_process.exec('git branch -l --format=\'%(refname:short)\'', { cwd: process.cwd() }, (err, res) => {
-      if (err) {
-        throw err;
+      if (!err) {
+        return tabtab.log(res.split('\n'));
       }
 
-      return tabtab.log(res.split('\n'));
+      if (err.message.includes('not a git repository (or any of the parent directories): .git')) {
+        return;
+      }
+
+      throw err;
     });
     //
   }
