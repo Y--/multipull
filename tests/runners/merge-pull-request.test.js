@@ -57,16 +57,18 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [] }));
 
         await runner(fixtureContext, 'repo-84');
 
         expect(mocks.logger.logError.mock.calls).toEqual([]);
         expect(fixtureContext.concernedRepos).toEqual([]);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
         });
 
         expectDebugCalls();
@@ -77,17 +79,19 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{ html_url: 'pr-url' }] }));
 
         await runner(fixtureContext, 'repo-84');
 
         expect(mocks.logger.logError.mock.calls).toEqual([]);
         expect(fixtureContext.concernedRepos).toEqual(['repo-84']);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: false,
           pr: { html_url: 'pr-url' },
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' }, pr: 'pr-url' },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' }, pr: 'pr-url' },
         });
 
         expectDebugCalls();
@@ -109,7 +113,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
         });
 
         expectDebugCalls();
@@ -121,6 +125,7 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{ html_url: 'pr-url' }] }));
 
         await runner(fixtureContext, 'repo-84');
@@ -131,12 +136,14 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
           result: {
+            hasWipCommit: false,
             merged: 'Dry',
             pr: 'pr-url',
             stash: { all: [], latest: null, total: 0 },
             status: { current: 'master' },
           },
         });
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
 
         expectDebugCalls();
       });

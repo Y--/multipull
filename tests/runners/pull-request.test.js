@@ -144,7 +144,6 @@ function testSuiteFactory(setupHooks, testParams) {
           [
             {
               AcceptHeader: 'shadow-cat-preview',
-              base: 'master',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },
@@ -168,7 +167,6 @@ function testSuiteFactory(setupHooks, testParams) {
           [
             {
               AcceptHeader: 'shadow-cat-preview',
-              base: 'master',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },
@@ -182,6 +180,7 @@ function testSuiteFactory(setupHooks, testParams) {
         fixtureContext.config.approve = true;
         mocks.sg.revparse.mockImplementationOnce(() => 'some-hash');
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => wrapGHResponse([{ number: 42 }]));
         mocks.ghRepo.approveReviewRequest.mockImplementationOnce(() => wrapGHResponse([{ review: 'fake' }]));
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'foo-branch' }));
@@ -192,12 +191,12 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.interrupted).toEqual(true);
 
         expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...foo-branch']]]);
         expect(mocks.sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
               AcceptHeader: 'shadow-cat-preview',
-              base: 'master',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },

@@ -83,6 +83,8 @@ function testSuiteFactory(setupHooks) {
       });
 
       const mockRunner2 = jest.fn((context, repoName) => repoName);
+      mocks.sg.raw.mockReturnValue('');
+
       const processor = new Processor(fixtureContext, [
         { runner: mockRunner1, title: 'Step 1' },
         { runner: mockRunner2, title: 'Step 2' },
@@ -102,6 +104,7 @@ function testSuiteFactory(setupHooks) {
       expect(results[1].repo).toEqual('repo-42');
 
       expect(mocks.logger.logInfo.mock.calls).toEqual([['Step 1']]);
+      expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
 
       expect(mocks.progress.tick.mock.calls).toHaveLength(fixtureReposCount + 1);
       expectMockRunner(mockRunner1);

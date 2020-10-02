@@ -14,16 +14,19 @@ function testSuiteFactory(setupHooks, testParams) {
     it('call git status on master', async () => {
       mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
       mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
+      mocks.sg.raw.mockReturnValue('');
 
       const res = await statusRepo(fixtureContext, REPO_NAME);
 
       expect(res).toEqual({
+        hasWipCommit: false,
         status: { current: 'master' },
         stash: { all: [], latest: null, total: 0 },
       });
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
+      expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
       expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([]);
 
       expectDebugCalls();
@@ -39,7 +42,7 @@ function testSuiteFactory(setupHooks, testParams) {
       mocks.sg.stashList.mockImplementationOnce(() => ({}));
 
       const res = await statusRepo(fixtureContext, REPO_NAME);
-      expect(res).toEqual({ status: { current: 'master' }, stash: { total: 0 } });
+      expect(res).toEqual({ hasWipCommit: false, status: { current: 'master' }, stash: { total: 0 } });
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
@@ -62,6 +65,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         const res = await statusRepo(fixtureContext, REPO_NAME);
         expect(res).toEqual({
+          hasWipCommit: false,
           status: { current: 'master' },
           stash: { all: [], latest: null, total: 0 },
         });
@@ -212,17 +216,20 @@ function testSuiteFactory(setupHooks, testParams) {
           }
 
           const res = await statusRepo(fixtureContext, REPO_NAME);
-          expect(res).toEqual(
-            Object.assign(
-              {
-                stash: { all: [], latest: null, total: 0 },
-                status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
-              },
-              expectedResult
-            )
-          );
 
-          const expectedLsPRArgs = { base: 'master', head: 'foo-owner:foo-branch', state: 'open', AcceptHeader };
+          if (expectedResult.pr) {
+            expect(res.pr).toMatch(new RegExp(expectedResult.pr));
+            res.pr = expectedResult.pr;
+          }
+
+          expect(res).toEqual({
+            hasWipCommit: false,
+            stash: { all: [], latest: null, total: 0 },
+            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
+            ...expectedResult
+          });
+
+          const expectedLsPRArgs = { head: 'foo-owner:foo-branch', state: 'open', AcceptHeader };
           expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
 
           const prNumberCalls = fixture.pullRequests ? fixture.pullRequests.map((pr) => [pr.number]) : [];
@@ -287,6 +294,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         const res = await statusRepo(fixtureContext, REPO_NAME);
         expect(res).toEqual({
+          hasWipCommit: false,
           status: { current: 'master' },
           stash: { all: [], latest: null, total: 0 },
         });
@@ -333,15 +341,13 @@ function testSuiteFactory(setupHooks, testParams) {
           }
 
           const res = await statusRepo(fixtureContext, REPO_NAME);
-          expect(res).toEqual(
-            Object.assign(
-              {
-                stash: { all: [], latest: null, total: 0 },
-                status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
-              },
-              expectedResult
-            )
-          );
+
+          expect(res).toEqual({
+            hasWipCommit: false,
+            stash: { all: [], latest: null, total: 0 },
+            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
+            ...expectedResult
+          });
 
           const shaCalls = fixture.pullRequests ? fixture.pullRequests.map((pr) => [pr.head.sha]) : [];
           expect(mocks.ghRepo.getCombinedStatus.mock.calls).toEqual(shaCalls);
@@ -356,6 +362,14 @@ function testSuiteFactory(setupHooks, testParams) {
 
       mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
 
+      // mocks.sg.revparse.mock
+      mocks.sg.raw.mockImplementationOnce(([command]) => {
+        if (command !== 'log') {
+          throw new Error(`Unexpected call to 'sg.raw': ${command}`);
+        }
+        return '';
+      });
+
       mocks.sg.raw.mockImplementationOnce(([command]) => {
         if (command !== 'rev-list') {
           throw new Error(`Unexpected call to 'sg.raw': ${command}`);
@@ -365,13 +379,14 @@ function testSuiteFactory(setupHooks, testParams) {
 
       const res = await statusRepo(fixtureContext, REPO_NAME);
       expect(res).toEqual({
+        hasWipCommit: false,
         status: { current: 'foo-branch', diff_with_origin_master: expectedDiffWithMaster },
         stash: { all: [], latest: null, total: 0 },
       });
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
-      expect(mocks.sg.raw.mock.calls).toEqual([[['rev-list', '--left-right', 'origin/master...foo-branch']]]);
+      expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...foo-branch']]]);
 
       expectDebugCalls();
     });

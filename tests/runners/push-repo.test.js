@@ -71,12 +71,13 @@ function testSuiteFactory(setupHooks, testParams) {
         const stash = { all: [], latest: null, total: 0 };
         mocks.sg.status.mockImplementation(() => status);
         mocks.sg.stashList.mockImplementationOnce(() => stash);
+        mocks.sg.raw.mockReturnValue('');
 
         const fixtureContext = createFixtureContext(REPO_NAME);
         Object.assign(fixtureContext.args, cmdLineArgs);
         const res = await pushRepo(fixtureContext, REPO_NAME);
 
-        expect(res).toEqual({ status, stash, pushed: expectedPushed });
+        expect(res).toEqual({ hasWipCommit: false, status, stash, pushed: expectedPushed });
 
         expect(mocks.sg.status.mock.calls).toEqual([[], []]);
         expect(mocks.sg.stashList.mock.calls).toEqual([[]]);

@@ -18,7 +18,10 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         status: { current: 'foo' },
         expectedCalls: {
-          raw: [[['rev-list', '--left-right', 'origin/master...foo']]],
+          raw: [
+            [['log', '--pretty=format:%s', '-1']],
+            [['rev-list', '--left-right', 'origin/master...foo']]
+          ],
         },
       },
       {
@@ -28,7 +31,9 @@ function testSuiteFactory(setupHooks, testParams) {
           stashList: [[], []],
           status: [[], []],
           raw: [
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
@@ -42,7 +47,9 @@ function testSuiteFactory(setupHooks, testParams) {
           stashList: [[], []],
           status: [[], []],
           raw: [
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
@@ -56,7 +63,9 @@ function testSuiteFactory(setupHooks, testParams) {
           stashList: [[], []],
           status: [[], []],
           raw: [
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
@@ -73,7 +82,9 @@ function testSuiteFactory(setupHooks, testParams) {
           stashList: [[], []],
           status: [[], []],
           raw: [
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']]],
@@ -90,7 +101,9 @@ function testSuiteFactory(setupHooks, testParams) {
           stashList: [[], []],
           status: [[], []],
           raw: [
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
+            [['log', '--pretty=format:%s', '-1']],
             [['rev-list', '--left-right', 'origin/master...foo']],
           ],
           rebase: [[['origin/master', '--stat']], [{ '--abort': null }]],
@@ -98,16 +111,20 @@ function testSuiteFactory(setupHooks, testParams) {
           reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
         },
       },
-    ].forEach(({ status, revList, rebaseWillFail, diffSummaryWillFail, expectedCalls }) => {
-      const suffix = `status is ${JSON.stringify(status)}`;
+    ].forEach(({ status, revList, rebaseWillFail, diffSummaryWillFail, expectedCalls }, i) => {
+      const suffix = `status is ${JSON.stringify(status)} - ${i}`;
       it(`Should return when ${suffix}`, async () => {
         const stash = { all: [], latest: null, total: 0 };
         mocks.sg.status.mockImplementation(() => status);
         mocks.sg.stashList.mockImplementation(() => stash);
 
-        if (revList) {
-          mocks.sg.raw.mockImplementationOnce(() => revList);
-        }
+        mocks.sg.raw.mockImplementation(([command]) => {
+          if (command === 'log') {
+            return '';
+          } else if (revList) {
+            return revList;
+          }
+        });
 
         if (rebaseWillFail) {
           mocks.sg.rebase.mockImplementationOnce(async () => {
@@ -124,7 +141,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const fixtureContext = createFixtureContext(REPO_NAME);
         const res = await rebaseBranch(fixtureContext, REPO_NAME);
 
-        const expectedRes = { status, stash };
+        const expectedRes = { status, stash, hasWipCommit: false };
         if (rebaseWillFail) {
           expectedRes.pull = { files: ['*** FETCHED ONLY, REBASE WOULD PRODUCE CONFLICTS ***'], summary: {} };
         }
@@ -139,6 +156,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls.fetch = expectedCalls.fetch || [[['--all']]];
         expectedCalls.status = expectedCalls.status || [[]];
         expectedCalls.stashList = expectedCalls.stashList || [[]];
+        expectedCalls.raw = expectedCalls.raw || [[['log', '--pretty=format:%s', '-1']]];
 
         for (const [handlerId, { mock }] of Object.entries(mocks.sg)) {
           try {

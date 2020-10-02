@@ -6,8 +6,14 @@ jest.mock('progress', () => jest.fn().mockImplementation(() => ({ tick: mockProg
 
 const mockDebug = jest.fn();
 mockDebug.enabled = false;
+mockDebug.extend = () => false;
 
-jest.mock('debug', () => jest.fn().mockImplementation(() => mockDebug));
+jest.mock('debug', () => {
+  const debugMock = jest.fn().mockImplementation(() => mockDebug);
+  debugMock.default = debugMock;
+  debugMock.default.formatters = {};
+  return debugMock;
+});
 
 const mockGHRepo = {};
 

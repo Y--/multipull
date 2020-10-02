@@ -108,6 +108,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const stash = { all: [], latest: null, total: 0 };
         mocks.sg.status.mockImplementation(() => status);
         mocks.sg.stashList.mockImplementationOnce(() => stash);
+        mocks.sg.raw.mockReturnValue('');
 
         if (expectedCalls.pull && pullWillFail) {
           mocks.sg.pull.mockImplementationOnce(async () => {
@@ -120,13 +121,15 @@ function testSuiteFactory(setupHooks, testParams) {
         const fixtureContext = createFixtureContext(REPO_NAME);
         const res = await pullRepo(fixtureContext, REPO_NAME);
 
-        expect(res).toEqual({ status, stash, pull: expectedPull });
+        expect(res).toEqual({ hasWipCommit: false, status, stash, pull: expectedPull });
 
         expect(mocks.sg.pull.mock.calls).toHaveLength(expectedCalls.pull ? 1 : 0);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
 
         expectedCalls.fetch = expectedCalls.fetch || [[['--all']]];
         expectedCalls.status = expectedCalls.status || [[], []];
         expectedCalls.stashList = expectedCalls.stashList || [[]];
+        expectedCalls.raw = expectedCalls.raw || [[['log', '--pretty=format:%s', '-1']]];
 
         for (const [handlerId, { mock }] of Object.entries(mocks.sg)) {
           try {

@@ -14,12 +14,16 @@ function testSuiteFactory(setupHooks, testParams) {
       {
         currentBranch: 'master',
         expectedCalls: {
+          raw: [[['log', '--pretty=format:%s', '-1']]],
           checkout: [['master']],
-        },
+        }
       },
       {
         currentBranch: 'master',
         workingBranch: 'foo-branch',
+        expectedCalls: {
+          raw: [[['log', '--pretty=format:%s', '-1']]]
+        }
       },
       {
         currentBranch: 'master',
@@ -33,7 +37,8 @@ function testSuiteFactory(setupHooks, testParams) {
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[], []],
-        },
+          raw: [[['log', '--pretty=format:%s', '-1']]]
+        }
       },
       {
         currentBranch: 'master',
@@ -42,7 +47,8 @@ function testSuiteFactory(setupHooks, testParams) {
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[]],
-        },
+          raw: [[['log', '--pretty=format:%s', '-1']]]
+        }
       },
       {
         currentBranch: 'bar-branch',
@@ -51,7 +57,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {
           status: [[], []],
           checkout: [['foo-branch'], ['master']],
-          raw: [[['rev-list', '--left-right', 'origin/master...bar-branch']]],
+          raw: [[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...bar-branch']]],
         },
       },
     ].forEach(({ currentBranch, workingBranch, defaultBranch, expectedCalls = {}, checkoutErr, expectedErr }) => {
@@ -62,6 +68,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const status = { current: currentBranch };
         mocks.sg.status.mockImplementation(() => status);
         mocks.sg.stashList.mockImplementationOnce(() => stash);
+        mocks.sg.raw.mockReturnValue('');
 
         if (checkoutErr) {
           mocks.sg.checkout.mockImplementationOnce(() => {
@@ -77,7 +84,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls.checkout = expectedCalls.checkout || [['foo-branch']];
         if (!expectedErr) {
           const res = await checkoutBranch(fixtureContext, REPO_NAME);
-          expect(res).toEqual({ status, stash });
+          expect(res).toEqual({ status, stash, hasWipCommit: false });
 
           expectedCalls.status = expectedCalls.status || [[]];
           expectedCalls.stashList = [[]];
