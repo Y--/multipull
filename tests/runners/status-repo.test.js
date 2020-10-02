@@ -222,6 +222,11 @@ function testSuiteFactory(setupHooks, testParams) {
             res.pr = expectedResult.pr;
           }
 
+          if (expectedResult.state) {
+            expect(res.state.includes(expectedResult.state)).toEqual(true);
+            res.state = expectedResult.state;
+          }
+
           expect(res).toEqual({
             hasWipCommit: false,
             stash: { all: [], latest: null, total: 0 },
