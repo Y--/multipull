@@ -19,29 +19,29 @@
     "url": "https://github.com/Y--/multipull/issues"
   },
   "bin": {
-    "multicheckout": "./bin/multicheckout",
-    "multiexec": "./bin/multiexec",
-    "multimerge": "./bin/multimerge",
-    "multipr": "./bin/multipr",
-    "multipull": "./bin/multipull",
-    "multipush": "./bin/multipush",
-    "multirebase": "./bin/multirebase",
-    "multistatus": "./bin/multistatus"
+    "multicheckout": "bin/multicheckout",
+    "multiexec": "bin/multiexec",
+    "multimerge": "bin/multimerge",
+    "multipr": "bin/multipr",
+    "multipull": "bin/multipull",
+    "multipush": "bin/multipush",
+    "multirebase": "bin/multirebase",
+    "multistatus": "bin/multistatus"
   },
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
     "cli-table": "Automattic/cli-table#b9ebd7570e20d885b7455c696d8fd2fcaa3c503f",
-    "colors": "^1.3.3",
-    "debug": "^4.1.1",
-    "github-api": "^3.2.2",
+    "colors": "^1.4.0",
+    "debug": "^4.3.1",
+    "github-api": "^3.3.0",
     "progress": "^2.0.3",
-    "rc": "^1.2.7",
-    "simple-git": "^2.17.0",
+    "rc": "^1.2.8",
+    "simple-git": "^2.26.0",
     "tabtab": "^3.0.2"
   },
   "devDependencies": {
     "eslint": "^7.6.0",
-    "eslint-plugin-jest": "^23.20.0",
+    "eslint-plugin-jest": "^24.1.3",
     "jest": "^26.4.0",
     "prettier": "^2.0.4"
   }
