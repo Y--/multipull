@@ -83,7 +83,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'N/A. ',
+            buildState: 'pending',
             state: 'Yes',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
@@ -98,7 +98,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'N/A. ',
+            buildState: 'pending',
             state: 'draft',
             pr: 'pr-url',
             reviews: '1 approved, 1 requested changes',
@@ -113,7 +113,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'Checks: ',
+            buildState: 'success',
             state: 'Yes',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -128,7 +128,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'Checks: ',
+            buildState: 'success',
             state: 'Conflicts',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -143,7 +143,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'Checks: ',
+            buildState: 'success',
             state: 'Conflicts (draft)',
             pr: 'pr-url',
             reviews: '1 requested changes',
@@ -158,7 +158,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'Checks: ',
+            buildState: 'success',
             state: 'Unknown',
             pr: 'pr-url',
             reviews: '1 comment',
@@ -173,10 +173,10 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            buildStatus: 'Because it failed\n1 failure',
+            buildState: 'failure',
             state: 'Yes',
             pr: 'pr-url',
-            reviews: 'Not reviewed',
+            reviews: 'None',
           },
         },
         {
@@ -253,15 +253,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedError: 'Invalid mergeable value \'wrong\'',
-        },
-        {
-          fixture: {
-            combinedStatus: { state: 'not-a-state', statuses: [] },
-            pullRequest: { html_url: 'pr-url', mergeable: null },
-          },
-
-          expectedError: 'Invalid state value \'not-a-state\'',
-        },
+        }
       ].forEach(({ fixture, expectedError }) => {
         it(`Should throw an error if the parameters are ${JSON.stringify(fixture)}: ${JSON.stringify(
           expectedError
@@ -318,6 +310,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
+            "buildState": "failure",
             buildStatus: 'description\n1 failure\ntarget://url',
           },
         },
@@ -331,6 +324,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
+            "buildState": "pending",
             buildStatus: 'description. 1 pending - target://url',
           },
         },
