@@ -231,7 +231,7 @@ function testSuiteFactory(setupHooks, testParams) {
             hasWipCommit: false,
             stash: { all: [], latest: null, total: 0 },
             status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
-            ...expectedResult
+            ...expectedResult,
           });
 
           const expectedLsPRArgs = { head: 'foo-owner:foo-branch', state: 'open', AcceptHeader };
@@ -253,7 +253,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedError: 'Invalid mergeable value \'wrong\'',
-        }
+        },
       ].forEach(({ fixture, expectedError }) => {
         it(`Should throw an error if the parameters are ${JSON.stringify(fixture)}: ${JSON.stringify(
           expectedError
@@ -310,7 +310,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            "buildState": "failure",
+            buildState: 'failure',
             buildStatus: 'description\n1 failure\ntarget://url',
           },
         },
@@ -324,7 +324,7 @@ function testSuiteFactory(setupHooks, testParams) {
           },
 
           expectedResult: {
-            "buildState": "pending",
+            buildState: 'pending',
             buildStatus: 'description. 1 pending - target://url',
           },
         },
@@ -345,7 +345,7 @@ function testSuiteFactory(setupHooks, testParams) {
             hasWipCommit: false,
             stash: { all: [], latest: null, total: 0 },
             status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
-            ...expectedResult
+            ...expectedResult,
           });
 
           const shaCalls = fixture.pullRequests ? fixture.pullRequests.map((pr) => [pr.head.sha]) : [];
@@ -385,7 +385,10 @@ function testSuiteFactory(setupHooks, testParams) {
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
-      expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...foo-branch']]]);
+      expect(mocks.sg.raw.mock.calls).toEqual([
+        [['log', '--pretty=format:%s', '-1']],
+        [['rev-list', '--left-right', 'origin/master...foo-branch']],
+      ]);
 
       expectDebugCalls();
     });
