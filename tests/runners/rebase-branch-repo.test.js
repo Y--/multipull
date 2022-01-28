@@ -12,7 +12,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
     [
       {
-        status: { ahead: 0, behind: 0, current: 'master' },
+        status: { ahead: 0, behind: 0, current: 'main' },
         expectedCalls: {},
       },
       {
@@ -20,7 +20,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']]
+            [['rev-list', '--left-right', 'origin/main...foo']]
           ],
         },
       },
@@ -32,12 +32,12 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
           ],
-          rebase: [[['origin/master', '--stat']]],
-          diffSummary: [[['foo...origin/master']]],
+          rebase: [[['origin/main', '--stat']]],
+          diffSummary: [[['foo...origin/main']]],
         },
       },
       {
@@ -48,11 +48,11 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
           ],
-          rebase: [[['origin/master', '--stat']]],
+          rebase: [[['origin/main', '--stat']]],
           diffSummary: [[['foo...origin/foo']]],
         },
       },
@@ -64,12 +64,12 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
           ],
-          rebase: [[['origin/master', '--stat']]],
-          diffSummary: [[['foo...origin/master']]],
+          rebase: [[['origin/main', '--stat']]],
+          diffSummary: [[['foo...origin/main']]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
           reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
         },
@@ -83,12 +83,12 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
           ],
-          rebase: [[['origin/master', '--stat']]],
-          diffSummary: [[['foo...origin/master']]],
+          rebase: [[['origin/main', '--stat']]],
+          diffSummary: [[['foo...origin/main']]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
           reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
         },
@@ -102,11 +102,11 @@ function testSuiteFactory(setupHooks, testParams) {
           status: [[], []],
           raw: [
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
             [['log', '--pretty=format:%s', '-1']],
-            [['rev-list', '--left-right', 'origin/master...foo']],
+            [['rev-list', '--left-right', 'origin/main...foo']],
           ],
-          rebase: [[['origin/master', '--stat']], [{ '--abort': null }]],
+          rebase: [[['origin/main', '--stat']], [{ '--abort': null }]],
           commit: [['[multipull] WIP', null, { '--no-verify': null, '-a': null }]],
           reset: [[['--soft', 'HEAD~1']], [['HEAD']]],
         },

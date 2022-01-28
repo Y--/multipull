@@ -60,12 +60,12 @@ function testSuiteFactory(setupHooks, testParams) {
         });
       });
 
-      it('Should look for the current branch and refuse if it is master', async () => {
+      it('Should look for the current branch and refuse if it is main', async () => {
         mocks.utils.exec
           .mockImplementationOnce(() => ({ stdout: 'git@github.com:username/repo-84.git' }))
-          .mockImplementationOnce(() => ({ stdout: 'master' }));
+          .mockImplementationOnce(() => ({ stdout: 'main' }));
 
-        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'master'/);
+        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'main'/);
         expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
       });
 
@@ -97,9 +97,9 @@ function testSuiteFactory(setupHooks, testParams) {
         });
       });
 
-      it('Should throw an error if the branch is master', async () => {
-        fixtureContext.workingBranch = 'master';
-        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'master'/);
+      it('Should throw an error if the branch is main', async () => {
+        fixtureContext.workingBranch = 'main';
+        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'main'/);
       });
 
       it('Should say that it will processed if the parameters are correct', async () => {
@@ -191,7 +191,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.interrupted).toEqual(true);
 
         expect(mocks.sg.revparse.mock.calls).toEqual([[['--verify', 'foo-branch']]]);
-        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...foo-branch']]]);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/main...foo-branch']]]);
         expect(mocks.sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
@@ -215,7 +215,7 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.utils.getYNAnswer.mockImplementationOnce(() => true);
 
         await runner(fixtureContext, [
-          genCheckoutResult('repo-01', 'master'),
+          genCheckoutResult('repo-01', 'main'),
           genCheckoutResult('repo-42', 'bar-branch'),
           genCheckoutResult('repo-84', 'foo-branch'),
           genCheckoutResult('repo-10', 'foo-branch'),
@@ -229,7 +229,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should interrupt the process if there is no matching branch', async () => {
         fixtureContext.workingBranch = 'old-branch';
 
-        await runner(fixtureContext, [genCheckoutResult('repo-84', 'master')]);
+        await runner(fixtureContext, [genCheckoutResult('repo-84', 'main')]);
 
         expect(fixtureContext.pullRequestsPerRepo).toBeUndefined();
         expect(fixtureContext.isInterrupted()).toEqual(true);
@@ -261,7 +261,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(context.isInterrupted()).toEqual(false);
         expect(context.pullRequestsParams).toEqual({
           AcceptHeader: 'shadow-cat-preview',
-          base: 'master',
+          base: 'main',
           body: '',
           draft: true,
           head: 'foo-branch',
@@ -316,7 +316,7 @@ function testSuiteFactory(setupHooks, testParams) {
     describe.skip('PR creation', () => {
       const { runner } = prCreation;
       beforeEach(() => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
       });
 
@@ -340,7 +340,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const context = createFixtureContext('repo-84');
         context.reviewers = null;
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
-        context.pullRequestsParams = { base: 'master', body: '', head: 'foo-branch' };
+        context.pullRequestsParams = { base: 'main', body: '', head: 'foo-branch' };
         context.workingBranch = 'foo-branch';
 
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
@@ -359,7 +359,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should send a clond', async () => {
         const context = createFixtureContext('repo-84');
-        const prParams = { base: 'master', body: '', head: 'foo-branch', AcceptHeader: 'foo' };
+        const prParams = { base: 'main', body: '', head: 'foo-branch', AcceptHeader: 'foo' };
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
         context.pullRequestsParams = clone(prParams);
         context.workingBranch = 'foo-branch';
@@ -391,7 +391,7 @@ function testSuiteFactory(setupHooks, testParams) {
         context.reviewers = expectedReviewers;
         context.pullRequestsPerRepo = genRepoMap(['repo-84']);
         context.pullRequestsParams = {
-          base: 'master',
+          base: 'main',
           body: '',
           head: 'foo-branch',
           title: 'PR on `foo-branch` for `repo-84`',
@@ -573,7 +573,7 @@ function testSuiteFactory(setupHooks, testParams) {
   }
 
   function genStatusResult(pr) {
-    const r = { stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } };
+    const r = { stash: { all: [], latest: null, total: 0 }, status: { current: 'main' } };
     if (pr) {
       r.pr = pr;
     }

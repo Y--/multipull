@@ -54,7 +54,7 @@ function testSuiteFactory(setupHooks, testParams) {
       });
 
       it('Should not add the repo if it doesnt have the PR', async () => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.sg.raw.mockReturnValue('');
@@ -68,7 +68,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' } },
         });
 
         expectDebugCalls();
@@ -76,7 +76,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should add the repo if it does have the PR', async () => {
         fixtureContext.workingBranch = 'foo-branch';
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.sg.raw.mockReturnValue('');
@@ -91,7 +91,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: false,
           pr: { html_url: 'pr-url' },
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' }, pr: 'pr-url' },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' }, pr: 'pr-url' },
         });
 
         expectDebugCalls();
@@ -99,7 +99,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       it('Should be an error to have more than one PR', async () => {
         fixtureContext.workingBranch = 'foo-branch';
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{}, {}] }));
@@ -113,7 +113,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'master' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' } },
         });
 
         expectDebugCalls();
@@ -122,7 +122,7 @@ function testSuiteFactory(setupHooks, testParams) {
       it('Should complete the process if the dry flag is activated', async () => {
         fixtureContext.workingBranch = 'foo-branch';
         fixtureContext.args.dry = true;
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
         mocks.sg.raw.mockReturnValue('');
@@ -140,7 +140,7 @@ function testSuiteFactory(setupHooks, testParams) {
             merged: 'Dry',
             pr: 'pr-url',
             stash: { all: [], latest: null, total: 0 },
-            status: { current: 'master' },
+            status: { current: 'main' },
           },
         });
         expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);

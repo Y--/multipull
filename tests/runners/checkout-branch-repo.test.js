@@ -12,27 +12,27 @@ function testSuiteFactory(setupHooks, testParams) {
 
     [
       {
-        currentBranch: 'master',
+        currentBranch: 'main',
         expectedCalls: {
           raw: [[['log', '--pretty=format:%s', '-1']]],
-          checkout: [['master']],
+          checkout: [['main']],
         }
       },
       {
-        currentBranch: 'master',
+        currentBranch: 'main',
         workingBranch: 'foo-branch',
         expectedCalls: {
           raw: [[['log', '--pretty=format:%s', '-1']]]
         }
       },
       {
-        currentBranch: 'master',
+        currentBranch: 'main',
         workingBranch: 'foo-branch',
         checkoutErr: 'some exception',
         expectedErr: /some exception/,
       },
       {
-        currentBranch: 'master',
+        currentBranch: 'main',
         workingBranch: 'foo-branch',
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
@@ -41,7 +41,7 @@ function testSuiteFactory(setupHooks, testParams) {
         }
       },
       {
-        currentBranch: 'master',
+        currentBranch: 'main',
         workingBranch: 'foo-branch',
         defaultBranch: 'foo-branch',
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
@@ -56,8 +56,8 @@ function testSuiteFactory(setupHooks, testParams) {
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[], []],
-          checkout: [['foo-branch'], ['master']],
-          raw: [[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/master...bar-branch']]],
+          checkout: [['foo-branch'], ['main']],
+          raw: [[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/main...bar-branch']]],
         },
       },
     ].forEach(({ currentBranch, workingBranch, defaultBranch, expectedCalls = {}, checkoutErr, expectedErr }) => {

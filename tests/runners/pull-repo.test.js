@@ -22,7 +22,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: {},
       },
       {
-        status: { ahead: 0, behind: 0, tracking: null, diff_with_origin_master: { behind: 0 } },
+        status: { ahead: 0, behind: 0, tracking: null, diff_with_origin_main: { behind: 0 } },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {},
       },
@@ -33,11 +33,11 @@ function testSuiteFactory(setupHooks, testParams) {
           deleted: [],
           created: [],
           conflicted: [],
-          diff_with_origin_master: { behind: 1 },
+          diff_with_origin_main: { behind: 1 },
         },
         expectedPull: { files: [], summary: {} },
         expectedCalls: {
-          rebase: [[['origin/master', '--stat']]],
+          rebase: [[['origin/main', '--stat']]],
         },
       },
       {
@@ -101,7 +101,7 @@ function testSuiteFactory(setupHooks, testParams) {
         },
       },
     ].forEach(({ status, pullWillFail, expectedPull, expectedCalls }) => {
-      status.current = 'master';
+      status.current = 'main';
 
       const suffix = `status is ${JSON.stringify(status)}`;
       it(`Should return ${JSON.stringify(expectedPull)} when ${suffix}`, async () => {

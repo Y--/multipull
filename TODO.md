@@ -10,6 +10,6 @@
 ** `GET` `/repos/:owner/:repo/assignees/:assignee`
 ** cache them in `~/.multipullrc`, expire them every week or month (by default)
 * After 'merge PR':
-** checkout master on these repos
+** checkout `mainBranch` on these repos
 ** pull on these repos
 * add `--outdated` to `multistatus` => check how many outdated depedencies + check diff vs package.json

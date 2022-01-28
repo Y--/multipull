@@ -15,7 +15,7 @@ Add a `.multipullrc` file in your home directory containing a JSON with the foll
 
 * `root` : the absolute path where your repositories are located
 * `repos` : an array of repositories names (will use every folder that have a `.git` folder in `root` if not specified)
-* `branches` : the default branch in the repository if not `master`
+* `branches` : the default branch in the repository if not `main`
 
 Example:
 
@@ -108,7 +108,7 @@ When on a branch different from the default branch, `multimerge` will merge any 
 
 `multipr` will attempt to create a pull request in all the repositories that are on the same branch as the current repository.
 
-Note that it will abort if the current branch is the default one (eg. master).
+Note that it will abort if the current branch is the default one (eg. `main`).
 
 #### Parameter `reviewers`
 

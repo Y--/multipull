@@ -11,8 +11,8 @@ function testSuiteFactory(setupHooks, testParams) {
   describe('Status', () => {
     setupHooks();
 
-    it('call git status on master', async () => {
-      mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+    it('call git status on main', async () => {
+      mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
       mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
       mocks.sg.raw.mockReturnValue('');
 
@@ -20,7 +20,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
       expect(res).toEqual({
         hasWipCommit: false,
-        status: { current: 'master' },
+        status: { current: 'main' },
         stash: { all: [], latest: null, total: 0 },
       });
 
@@ -32,17 +32,17 @@ function testSuiteFactory(setupHooks, testParams) {
       expectDebugCalls();
     });
 
-    testGS('call git status on a branch that is in sync with master', '', { ahead: 0, behind: 0 });
-    testGS('call git status on a branch ahead of master', '>hash-1\n>hash-2', { ahead: 2, behind: 0 });
-    testGS('call git status on a branch behind master', '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
-    testGS('call git status on a branch that diverged from master', '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
+    testGS('call git status on a branch that is in sync with main', '', { ahead: 0, behind: 0 });
+    testGS('call git status on a branch ahead of main', '>hash-1\n>hash-2', { ahead: 2, behind: 0 });
+    testGS('call git status on a branch behind main', '<hash-1\n<hash-2', { ahead: 0, behind: 2 });
+    testGS('call git status on a branch that diverged from main', '>hash-1\n<hash-2', { ahead: 1, behind: 1 });
 
     it('the stash count is 0 by default', async () => {
-      mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+      mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
       mocks.sg.stashList.mockImplementationOnce(() => ({}));
 
       const res = await statusRepo(fixtureContext, REPO_NAME);
-      expect(res).toEqual({ hasWipCommit: false, status: { current: 'master' }, stash: { total: 0 } });
+      expect(res).toEqual({ hasWipCommit: false, status: { current: 'main' }, stash: { total: 0 } });
 
       expect(mocks.sg.status.mock.calls).toEqual([[]]);
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
@@ -59,14 +59,14 @@ function testSuiteFactory(setupHooks, testParams) {
         delete fixtureContext.config.pr;
       });
 
-      it('Should not do anything if the current branch is master', async () => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+      it('Should not do anything if the current branch is main', async () => {
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
 
         const res = await statusRepo(fixtureContext, REPO_NAME);
         expect(res).toEqual({
           hasWipCommit: false,
-          status: { current: 'master' },
+          status: { current: 'main' },
           stash: { all: [], latest: null, total: 0 },
         });
 
@@ -230,7 +230,7 @@ function testSuiteFactory(setupHooks, testParams) {
           expect(res).toEqual({
             hasWipCommit: false,
             stash: { all: [], latest: null, total: 0 },
-            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
+            status: { current: 'foo-branch', diff_with_origin_main: { ahead: 0, behind: 0 } },
             ...expectedResult,
           });
 
@@ -285,14 +285,14 @@ function testSuiteFactory(setupHooks, testParams) {
         delete fixtureContext.config.full;
       });
 
-      it('Should not do anything if the current branch is master', async () => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'master' }));
+      it('Should not do anything if the current branch is main', async () => {
+        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
 
         const res = await statusRepo(fixtureContext, REPO_NAME);
         expect(res).toEqual({
           hasWipCommit: false,
-          status: { current: 'master' },
+          status: { current: 'main' },
           stash: { all: [], latest: null, total: 0 },
         });
 
@@ -344,7 +344,7 @@ function testSuiteFactory(setupHooks, testParams) {
           expect(res).toEqual({
             hasWipCommit: false,
             stash: { all: [], latest: null, total: 0 },
-            status: { current: 'foo-branch', diff_with_origin_master: { ahead: 0, behind: 0 } },
+            status: { current: 'foo-branch', diff_with_origin_main: { ahead: 0, behind: 0 } },
             ...expectedResult,
           });
 
@@ -379,7 +379,7 @@ function testSuiteFactory(setupHooks, testParams) {
       const res = await statusRepo(fixtureContext, REPO_NAME);
       expect(res).toEqual({
         hasWipCommit: false,
-        status: { current: 'foo-branch', diff_with_origin_master: expectedDiffWithMaster },
+        status: { current: 'foo-branch', diff_with_origin_main: expectedDiffWithMaster },
         stash: { all: [], latest: null, total: 0 },
       });
 
@@ -387,7 +387,7 @@ function testSuiteFactory(setupHooks, testParams) {
       expect(mocks.sg.stashList.mock.calls).toEqual([[]]);
       expect(mocks.sg.raw.mock.calls).toEqual([
         [['log', '--pretty=format:%s', '-1']],
-        [['rev-list', '--left-right', 'origin/master...foo-branch']],
+        [['rev-list', '--left-right', 'origin/main...foo-branch']],
       ]);
 
       expectDebugCalls();

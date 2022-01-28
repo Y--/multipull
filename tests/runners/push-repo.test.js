@@ -12,21 +12,21 @@ function testSuiteFactory(setupHooks, testParams) {
 
     [
       {
-        status: { ahead: 0, behind: 0, current: 'master', tracking: 'origin/master' },
+        status: { ahead: 0, behind: 0, current: 'main', tracking: 'origin/main' },
         cmdLineArgs: {},
         expectedPushed: '',
         expectedPushCall: null,
       },
       {
-        status: { ahead: 42, behind: 0, current: 'master', tracking: 'origin/master' },
+        status: { ahead: 42, behind: 0, current: 'main', tracking: 'origin/main' },
         cmdLineArgs: {},
         expectedPushed: 'Yes',
         expectedPushCall: [],
       },
       {
-        status: { ahead: 1, behind: 3, current: 'master', tracking: 'origin/master' },
+        status: { ahead: 1, behind: 3, current: 'main', tracking: 'origin/main' },
         cmdLineArgs: {},
-        expectedPushed: 'No (\'master\' is behind 3 commits from \'origin/master\')',
+        expectedPushed: 'No (\'main\' is behind 3 commits from \'origin/main\')',
         expectedPushCall: null,
       },
       {
