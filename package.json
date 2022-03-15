@@ -32,7 +32,7 @@
   "dependencies": {
     "cli-table": "Automattic/cli-table#b9ebd7570e20d885b7455c696d8fd2fcaa3c503f",
     "colors": "^1.4.0",
-    "debug": "^4.3.1",
+    "debug": "^4.3.3",
     "github-api": "^3.4.0",
     "progress": "^2.0.3",
     "rc": "^1.2.8",
@@ -40,9 +40,9 @@
     "tabtab": "^3.0.2"
   },
   "devDependencies": {
-    "eslint": "^7.24.0",
-    "eslint-plugin-jest": "^24.3.5",
-    "jest": "^26.4.0",
-    "prettier": "^2.0.4"
+    "eslint": "^8.10.0",
+    "eslint-plugin-jest": "^26.1.1",
+    "jest": "^27.5.1",
+    "prettier": "^2.5.1"
   }
 }
