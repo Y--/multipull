@@ -36,7 +36,7 @@
     "github-api": "^3.4.0",
     "progress": "^2.0.3",
     "rc": "^1.2.8",
-    "simple-git": "2.26.0",
+    "simple-git": "3.15.0",
     "tabtab": "^3.0.2"
   },
   "devDependencies": {
