@@ -304,29 +304,15 @@ describe('simple-git helper', () => {
         ['wiping', false],
         ['swipe left', false],
         ['Regular commit', false],
+        ['Some WIP', true],
+        ['Wip foo', true],
+        ['wip: foo', true],
+        ['[multipull] WIP', true],
+        ['add wipe option', false],
       ];
 
       for (const [title, expected] of cases) {
         it(`should return ${expected} for '${title}'`, async () => {
-          const sg = setupSg({ lastCommitTitle: title });
-          const res = await gitHelper.commonStatus(sg, 'repo-1', 'main');
-          expect(res.hasWipCommit).toBe(expected);
-        });
-      }
-
-      // Known bugs in `getHasWipCommit`/`hasWipWord` (lib/helpers/simple-git.js):
-      // - the character following the match is read at `str[subLen]` instead of `str[idx + subLen]`
-      // - only `wip` and `WIP` are searched, so mixed-case variants return an index of -1
-      // - punctuation right after `wip` is not treated as a word boundary
-      const failingCases = [
-        ['Some WIP', true],
-        ['Wip foo', true],
-        ['wip: foo', true],
-        ['add wipe option', false],
-      ];
-
-      for (const [title, expected] of failingCases) {
-        it.failing(`should return ${expected} for '${title}'`, async () => {
           const sg = setupSg({ lastCommitTitle: title });
           const res = await gitHelper.commonStatus(sg, 'repo-1', 'main');
           expect(res.hasWipCommit).toBe(expected);

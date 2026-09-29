@@ -328,9 +328,7 @@ function testSuiteFactory(setupHooks, testParams) {
         }
       });
 
-      // BUG: `findForcedReviewers` doesn't filter empty names, so `--reviewers=` on a draft
-      // yields `['']` and the PR creation requests a review from an empty user name.
-      it.failing('Should not set any reviewer on a draft PR when --reviewers is empty', async () => {
+      it('Should not set any reviewer on a draft PR when --reviewers is empty', async () => {
         fixtureContext.config.reviewers = '';
         mocks.utils.getYNAnswer.mockResolvedValueOnce(true);
 
@@ -377,9 +375,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.isInterrupted()).toEqual(false);
       });
 
-      // BUG: `areSameUpdates` compares the `reviewers` arrays by reference, so identical
-      // updates are never grouped and each repo is listed separately.
-      it.failing('Should group identical updates in the question', async () => {
+      it('Should group identical updates in the question', async () => {
         fixtureContext.config.collaborators = 'rev1,rev2';
         mocks.utils.getYNAnswer.mockResolvedValueOnce(true);
 

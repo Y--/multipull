@@ -566,7 +566,8 @@ function testSuiteFactory(setupHooks, testParams) {
         { title: 'WIP', expected: true },
         { title: 'WIP on the new feature', expected: true },
         { title: 'Add feature', expected: false },
-        { title: 'wip: something', expected: false },
+        { title: 'wip: something', expected: true },
+        { title: 'Fix wiping logic', expected: false },
       ].forEach(({ title, expected }) => {
         it(`Should return hasWipCommit=${expected} when the last commit is "${title}"`, async () => {
           mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
@@ -576,17 +577,6 @@ function testSuiteFactory(setupHooks, testParams) {
           const res = await statusRepo(fixtureContext, REPO_NAME);
           expect(res.hasWipCommit).toEqual(expected);
         });
-      });
-
-      // SUSPECTED LIB BUG: `hasWipWord` checks `str[subLen]` instead of `str[idx + subLen]`,
-      // so a word merely starting with "wip" after a 3-letter word is reported as a WIP commit.
-      it.failing('Should not flag words that only start with "wip" (e.g. "Fix wiping logic")', async () => {
-        mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
-        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
-        mocks.sg.raw.mockImplementation(([command]) => (command === 'log' ? 'Fix wiping logic' : ''));
-
-        const res = await statusRepo(fixtureContext, REPO_NAME);
-        expect(res.hasWipCommit).toEqual(false);
       });
     });
   });

@@ -157,6 +157,26 @@ function testSuiteFactory(setupHooks, testParams) {
         },
       },
       {
+        title: 'excludes submodules listed as created or conflicted from the WIP commit',
+        status: {
+          ahead: 0,
+          behind: 1,
+          modified: ['file.js', SUBMODULE_NAME],
+          deleted: [],
+          created: ['other-sub'],
+          conflicted: [SUBMODULE_NAME],
+        },
+        submodules: [SUBMODULE_NAME, 'other-sub'],
+        expectedPull: { files: ['a-file'], summary: {} },
+        expectedCalls: {
+          add: [[['.', ':!' + SUBMODULE_NAME, ':!other-sub']]],
+          commit: [[WIP_COMMIT_MESSAGE, null, { '--no-verify': null }]],
+          pull: [[null, null, PULL_REBASE_ARGS]],
+          log: [[['-1']]],
+          reset: WIP_RESET_CALLS,
+        },
+      },
+      {
         status: { ahead: 1, behind: 1, modified: [], deleted: [], created: [], conflicted: [] },
         expectedPull: { files: ['a-file'], summary: {} },
         expectedCalls: {

@@ -132,10 +132,14 @@ function testSuiteFactory(setupHooks, testParams) {
           });
         }
 
+        const diffSummary = { files: [{ file: 'foo.js' }], changed: 1, insertions: 2, deletions: 3 };
+        mocks.sg.diffSummary.mockReset();
         if (diffSummaryWillFail) {
           mocks.sg.diffSummary.mockImplementationOnce(async () => {
             throw new Error();
           });
+        } else {
+          mocks.sg.diffSummary.mockResolvedValueOnce(diffSummary);
         }
 
         const fixtureContext = createFixtureContext(REPO_NAME);
@@ -147,6 +151,8 @@ function testSuiteFactory(setupHooks, testParams) {
         }
         if (diffSummaryWillFail) {
           expectedRes.pull = { files: [''], summary: {} };
+        } else if (expectedCalls.diffSummary) {
+          expectedRes.pull = diffSummary;
         }
 
         expect(res).toEqual(expectedRes);

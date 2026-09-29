@@ -122,9 +122,7 @@ describe('Context', () => {
       expect(context.getDefaultBranch('repo-a')).toBe('${unknown}');
     });
 
-    // Bug: `resolveReference` reads `references[key]` without checking that `refs` is configured,
-    // so using a reference without a `refs` section crashes the constructor.
-    it.failing('should keep references as is when no `refs` are configured', () => {
+    it('should keep references as is when no `refs` are configured', () => {
       const context = createContext({ branches: { 'repo-a': '${release}' } });
       expect(context.getDefaultBranch('repo-a')).toBe('${release}');
     });
