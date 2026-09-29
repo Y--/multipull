@@ -15,7 +15,9 @@ jest.mock('debug', () => {
   return debugMock;
 });
 
-const mockGHRepo = {};
+// Own class so that `getGHRepo` patches `MockRepository.prototype` instead of `Object.prototype`
+class MockRepository {}
+const mockGHRepo = new MockRepository();
 
 const ghRepoFunctionNames = [
   'approveReviewRequest',
@@ -24,6 +26,7 @@ const ghRepoFunctionNames = [
   'getCombinedStatus',
   'getPullRequest',
   'getReviews',
+  'graphql',
   'listPullRequests',
   'mergePullRequest',
   'updatePullRequest',
@@ -37,12 +40,16 @@ jest.mock('github-api', () =>
     getRepo() {
       return mockGHRepo;
     },
-  }))
+  })),
 );
 
 const sg = {};
 const simpleGitInstance = require('simple-git')();
-for (let proto = Object.getPrototypeOf(simpleGitInstance); proto && proto !== Object.prototype; proto = Object.getPrototypeOf(proto)) {
+for (
+  let proto = Object.getPrototypeOf(simpleGitInstance);
+  proto && proto !== Object.prototype;
+  proto = Object.getPrototypeOf(proto)
+) {
   for (const funcName of Object.getOwnPropertyNames(proto)) {
     if (funcName !== 'constructor' && typeof simpleGitInstance[funcName] === 'function') {
       sg[funcName] = jest.fn();
