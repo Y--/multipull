@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+// Shell completion for every multipull command, see "Shell completion" in README.md
+process.exitCode = require('../lib/completion').main(process.argv.slice(2));

@@ -24,15 +24,19 @@
   "bin": {
     "multicheckout": "bin/multicheckout",
     "multiexec": "bin/multiexec",
+    "multilist": "bin/multilist",
     "multimerge": "bin/multimerge",
+    "multimergepr": "bin/multimergepr",
     "multipr": "bin/multipr",
     "multipull": "bin/multipull",
+    "multipull-completion": "bin/multipull-completion",
     "multipush": "bin/multipush",
     "multirebase": "bin/multirebase",
     "multistatus": "bin/multistatus"
   },
   "homepage": "https://github.com/Y--/multipull#readme",
   "dependencies": {
+    "@bomb.sh/tab": "^0.0.22",
     "cli-table": "Automattic/cli-table#b9ebd7570e20d885b7455c696d8fd2fcaa3c503f",
     "colors": "^1.4.0",
     "debug": "^4.4.3",
@@ -40,8 +44,7 @@
     "ini": "^7.0.0",
     "progress": "^2.0.3",
     "rc": "^1.2.8",
-    "simple-git": "4.0.2",
-    "tabtab": "^3.0.2"
+    "simple-git": "4.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

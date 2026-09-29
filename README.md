@@ -34,6 +34,28 @@ Example:
 }
 ```
 
+## Shell completion
+
+`multipull-completion` (installed along with the other commands) prints the completion script of every
+`multi*` command. Load it from your shell's startup file:
+
+```sh
+# zsh (~/.zshrc, after `compinit`)
+source <(multipull-completion zsh)
+
+# bash >= 4 with bash-completion (~/.bashrc)
+eval "$(multipull-completion bash)"
+
+# fish (~/.config/fish/config.fish)
+multipull-completion fish | source
+```
+
+Then press <kbd>Tab</kbd>: flags (`multistatus --pr --<Tab>`), local branches (`multicheckout <Tab>`) and
+reviewers taken from the `collaborators` setting (`multipr --reviewers=<Tab>`) are completed.
+
+If you had set up completion with a previous version, remove the `# tabtab source for packages` block from your
+shell's startup file (and `~/.config/tabtab`).
+
 ## Usage
 
 Every command will always display a table summarizing the status at the end.
