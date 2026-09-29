@@ -1,7 +1,7 @@
 const { mocks } = require('../mocks');
 const { createFixtureContext, setupTests } = require('../utils');
 const mergePullRequestRunnerSpec = require('../../lib/runners/merge-pull-request');
-const colors = require('colors/safe');
+const colors = require('../../lib/helpers/colors');
 
 const fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
 

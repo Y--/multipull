@@ -1,5 +1,5 @@
 const logger = require('../../lib/helpers/logger');
-const colors = require('colors/safe');
+const colors = require('../../lib/helpers/colors').stderr;
 
 describe('Logger', () => {
   const spies = {};

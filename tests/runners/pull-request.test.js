@@ -1,7 +1,7 @@
 const { mocks } = require('../mocks');
 const { createFixtureContext, setupTests } = require('../utils');
 const pullRequestRunnerSpec = require('../../lib/runners/pull-request');
-const colors = require('colors/safe');
+const colors = require('../../lib/helpers/colors');
 
 const [validateParameters, checkoutStep, selectRepositories, prCreation, prBodyGeneration, prBodyUpdate] =
   pullRequestRunnerSpec;
@@ -64,7 +64,7 @@ function testSuiteFactory(setupHooks) {
         expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
       });
 
-      const boldBranch = '\u001b[1mfoo-branch\u001b[22m';
+      const boldBranch = colors.bold('foo-branch');
       [
         'git@github.com:username/repo-84.git',
         'git@github.com:username/repo-84.git\n',
