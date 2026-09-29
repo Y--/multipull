@@ -77,6 +77,20 @@ describe('CleanTable', () => {
       expect(table.options.style.border).toEqual(['grey']);
     });
 
+    it('should color the header of each row like the table header in a terminal', () => {
+      process.stdout.isTTY = true;
+      const table = new CleanTable({ head: ['', 'A'] });
+      table.push({ 'repo-1': ['a'] });
+      table.push({ '  sub-repo': ['b'] });
+
+      const out = table.toString();
+
+      expect(out).toContain('\x1B[31mrepo-1\x1B[39m');
+      expect(out).toContain('\x1B[31m  sub-repo\x1B[39m');
+      expect(new Set(displayedLines(out).map(displayWidth)).size).toBe(1);
+      expect(Array.from(table)).toEqual([{ 'repo-1': ['a'] }, { '  sub-repo': ['b'] }]); // Rows are left untouched
+    });
+
     it('should keep an explicit style when the output is not a terminal', () => {
       process.stdout.isTTY = false;
       const table = new CleanTable({ head: ['', 'A'], style: { head: ['cyan'] } });
