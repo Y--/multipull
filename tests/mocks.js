@@ -41,13 +41,21 @@ jest.mock('github-api', () =>
 );
 
 const sg = {};
-const simpleGit = require('simple-git/src/git');
-for (const funcName of Object.keys(simpleGit.prototype)) {
-  sg[funcName] = jest.fn();
+const simpleGitInstance = require('simple-git')();
+for (let proto = Object.getPrototypeOf(simpleGitInstance); proto && proto !== Object.prototype; proto = Object.getPrototypeOf(proto)) {
+  for (const funcName of Object.getOwnPropertyNames(proto)) {
+    if (funcName !== 'constructor' && typeof simpleGitInstance[funcName] === 'function') {
+      sg[funcName] = jest.fn();
+    }
+  }
 }
 
 const gitHelper = require('../lib/helpers/simple-git');
-gitHelper.initSimpleGit = () => sg;
+gitHelper.initSimpleGit = (context, repo) => {
+  sg.context = context;
+  sg.repo = repo;
+  return sg;
+};
 
 const mockedUtils = {
   exec: jest.fn(),

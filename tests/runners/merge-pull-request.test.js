@@ -16,6 +16,7 @@ function testSuiteFactory(setupHooks, testParams) {
     beforeEach(() => {
       fixtureContext.workingBranch = null;
       delete fixtureContext.concernedRepos;
+      mocks.utils.exec.mockResolvedValue({ stdout: '' });
     });
 
     describe('Set working branch', () => {
@@ -68,7 +69,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main', isDefaultBranch: true } },
         });
 
         expectDebugCalls();
@@ -91,7 +92,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: false,
           pr: { html_url: 'pr-url' },
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' }, pr: 'pr-url' },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main', isDefaultBranch: true }, pr: 'pr-url' },
         });
 
         expectDebugCalls();
@@ -102,6 +103,7 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.status.mockImplementationOnce(() => ({ current: 'main' }));
         mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.listRemote.mockImplementationOnce(() => 'git@github.com:foo-owner/repo-84.git');
+        mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{}, {}] }));
 
         await expect(runner(fixtureContext, 'repo-84')).rejects.toThrowError(
@@ -113,7 +115,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(fixtureContext.getRepoContext('repo-84')).toEqual({
           completed: true,
-          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main' } },
+          result: { hasWipCommit: false, stash: { all: [], latest: null, total: 0 }, status: { current: 'main', isDefaultBranch: true } },
         });
 
         expectDebugCalls();
@@ -140,7 +142,7 @@ function testSuiteFactory(setupHooks, testParams) {
             merged: 'Dry',
             pr: 'pr-url',
             stash: { all: [], latest: null, total: 0 },
-            status: { current: 'main' },
+            status: { current: 'main', isDefaultBranch: true },
           },
         });
         expect(mocks.sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
@@ -233,7 +235,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const expectedMergeArgs = {
           commit_message: '',
           commit_title: 'Merge pull request #42 from head-label/head-ref',
-          merge_method: 'merge',
+          merge_method: 'squash',
           sha: 33,
         };
 
@@ -254,7 +256,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const expectedMergeArgs = {
           commit_message: '',
           commit_title: 'Merge pull request #42 from head-label/head-ref',
-          merge_method: 'merge',
+          merge_method: 'squash',
           sha: 33,
         };
 

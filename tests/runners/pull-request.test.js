@@ -21,6 +21,7 @@ function testSuiteFactory(setupHooks, testParams) {
     let fixtureContext = null;
     beforeEach(() => {
       fixtureContext = createFixtureContext('repo-01,repo-42,repo-84,repo-10');
+      mocks.utils.exec.mockResolvedValue({ stdout: '' });
     });
 
     describe('Parameters validation', () => {

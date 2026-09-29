@@ -47,7 +47,7 @@ function testSuiteFactory(setupHooks, testParams) {
         checkoutErr: 'pathspec \'foo-branch\' did not match any file',
         expectedCalls: {
           status: [[]],
-          raw: [[['log', '--pretty=format:%s', '-1']]]
+          raw: [[['log', '--pretty=format:%s', '-1']], [['rev-list', '--left-right', 'origin/foo-branch...main']]],
         }
       },
       {
@@ -96,6 +96,10 @@ function testSuiteFactory(setupHooks, testParams) {
         }
 
         for (const [handlerId, { mock }] of Object.entries(mocks.sg)) {
+          if (!mock) {
+            continue;
+          }
+
           try {
             expect(mock.calls).toEqual(expectedCalls[handlerId] || []);
           } catch (err) {

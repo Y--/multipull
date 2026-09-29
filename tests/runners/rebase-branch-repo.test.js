@@ -159,6 +159,10 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls.raw = expectedCalls.raw || [[['log', '--pretty=format:%s', '-1']]];
 
         for (const [handlerId, { mock }] of Object.entries(mocks.sg)) {
+          if (!mock) {
+            continue;
+          }
+
           try {
             expect(mock.calls).toEqual(expectedCalls[handlerId] || []);
           } catch (err) {
