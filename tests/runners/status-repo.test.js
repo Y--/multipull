@@ -534,19 +534,21 @@ function testSuiteFactory(setupHooks, testParams) {
         expect(res.status.diff_with_origin_main).toBeUndefined();
         expect(mocks.sg.status.mock.calls).toEqual([]);
         expect(mocks.sg.raw.mock.calls).toEqual(expect.arrayContaining([[['diff', '--submodule=short', '--', 'sub']]]));
+        expect(mocks.sg.stashList.mock.calls).toEqual([[]]); // Changed submodules are displayed: check their stash
       });
 
-      it('Should report an empty revision when the submodule is unchanged', async () => {
-        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
-
+      it('Should report an empty revision and skip the stash and last commit when the submodule is unchanged', async () => {
         const res = await statusRepo(submoduleContext, SUBMODULE);
 
         expect(res.status.isSubmodule).toEqual(true);
         expect(res.status.current).toEqual('');
+        expect(res.stash).toEqual({ all: [], latest: null, total: 0 });
+        expect(res.hasWipCommit).toEqual(false);
+        expect(mocks.sg.stashList.mock.calls).toEqual([]);
+        expect(mocks.sg.raw.mock.calls).toEqual([[['diff', '--submodule=short', '--', 'sub']]]);
       });
 
       it('Should add context to the error when the parent diff fails', async () => {
-        mocks.sg.stashList.mockImplementationOnce(() => ({ all: [], latest: null, total: 0 }));
         mocks.sg.raw.mockImplementation(([command]) => {
           if (command === 'diff') {
             throw new Error('boom');

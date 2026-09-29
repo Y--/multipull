@@ -159,7 +159,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         expect(mocks.sg.pull.mock.calls).toHaveLength(expectedCalls.pull ? 1 : 0);
 
-        expectedCalls.fetch = expectedCalls.fetch || [[['--all']]];
+        expectedCalls.fetch = expectedCalls.fetch || [[['--all', '--jobs=8']]];
         expectedCalls.status = expectedCalls.status || [[]];
         expectedCalls.stashList = expectedCalls.stashList || [[]];
         expectedCalls.raw = expectedCalls.raw || [[['log', '--pretty=format:%s', '-1']]];

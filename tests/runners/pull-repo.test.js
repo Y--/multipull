@@ -31,21 +31,24 @@ function testSuiteFactory(setupHooks, testParams) {
       consoleErrorSpy.mockRestore();
     });
 
+    // Up to date: the status computed to decide whether to pull is reused for the result
+    const UP_TO_DATE_STATUS_CALLS = [[]];
+
     [
       {
         status: { ahead: 0, behind: 0 },
         expectedPull: UP_TO_DATE_PULL,
-        expectedCalls: {},
+        expectedCalls: { status: UP_TO_DATE_STATUS_CALLS },
       },
       {
         status: { ahead: 0, behind: 0, tracking: null },
         expectedPull: UP_TO_DATE_PULL,
-        expectedCalls: {},
+        expectedCalls: { status: UP_TO_DATE_STATUS_CALLS },
       },
       {
         status: { ahead: 0, behind: 0, tracking: null, diff_with_origin_main: { behind: 0 } },
         expectedPull: UP_TO_DATE_PULL,
-        expectedCalls: {},
+        expectedCalls: { status: UP_TO_DATE_STATUS_CALLS },
       },
       {
         status: { ahead: 0, behind: 0 },
@@ -53,6 +56,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedPull: UP_TO_DATE_PULL,
         expectedCalls: {
           raw: [[['submodule', 'update', '--recursive']], [['log', '--pretty=format:%s', '-1']]],
+          status: UP_TO_DATE_STATUS_CALLS,
         },
       },
       {
@@ -300,7 +304,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
         const allExpectedCalls = Object.assign(
           {
-            fetch: [[['--all']]],
+            fetch: [[['--all', '--jobs=8']]],
             status: [[], []],
             stashList: [[]],
             raw: [[['log', '--pretty=format:%s', '-1']]],

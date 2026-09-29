@@ -316,21 +316,94 @@ describe('simple-git helper', () => {
       await expect(gitHelper.commonStatus(sg, 'repo-1', 'main')).rejects.toThrow('fatal: other');
     });
 
-    it('should not compute the diff on a submodule', async () => {
+    it('should not run any git command in an unchanged submodule', async () => {
       const parentSg = { raw: jest.fn().mockResolvedValue('') };
       const sg = createSg({
         repo: 'parent/sub',
         submoduleToParentMap: new Map([['parent/sub', 'parent']]),
         parentSg,
       });
-      sg.stashList.mockResolvedValue({ total: 0 });
-      sg.raw.mockResolvedValue('Some commit');
 
       const res = await gitHelper.commonStatus(sg, 'parent/sub', 'main');
       expect(res.status.isSubmodule).toBe(true);
       expect(res.status.isDefaultBranch).toBe(false);
       expect(res.status).not.toHaveProperty('diff_with_origin_main');
+      expect(res.stash).toEqual({ all: [], latest: null, total: 0 });
+      expect(res.hasWipCommit).toBe(false);
+      expect(sg.raw.mock.calls).toEqual([]);
+      expect(sg.stashList.mock.calls).toEqual([]);
+    });
+
+    it('should look at the stash and the last commit of a changed submodule', async () => {
+      const parentSg = { raw: jest.fn().mockResolvedValue('diff --git a/sub b/sub\nindex 1111111..2222222 160000\n') };
+      const sg = createSg({
+        repo: 'parent/sub',
+        submoduleToParentMap: new Map([['parent/sub', 'parent']]),
+        parentSg,
+      });
+      sg.stashList.mockResolvedValue({ total: 2 });
+      sg.raw.mockResolvedValue('WIP');
+
+      const res = await gitHelper.commonStatus(sg, 'parent/sub', 'main');
+      expect(res.status.current).toBe('1111111..2222222');
+      expect(res.stash).toEqual({ total: 2 });
+      expect(res.hasWipCommit).toBe(true);
       expect(sg.raw.mock.calls).toEqual([[['log', '--pretty=format:%s', '-1']]]);
+    });
+
+    describe('Submodules of the same parent', () => {
+      function createSiblings(paths, parentSg) {
+        const submoduleToParentMap = new Map(paths.map((p) => [`parent/${p}`, 'parent']));
+        submoduleToParentMap.set('other/x', 'other');
+        const context = { submoduleToParentMap, getGitAPI: jest.fn(() => parentSg) };
+        return paths.map((p) => ({ ...createSg({ repo: `parent/${p}` }), context }));
+      }
+
+      const DIFF = [
+        'diff --git a/a b/a',
+        'index 1111111..2222222 160000',
+        '--- a/a',
+        '+++ b/a',
+        '@@ -1 +1 @@',
+        '-Subproject commit 1111111',
+        '+Subproject commit 2222222',
+        'diff --git a/nested/c b/nested/c',
+        'index 3333333..4444444 160000',
+        '--- a/nested/c',
+        '+++ b/nested/c',
+      ].join('\n');
+
+      it('should run a single diff in the parent for all its submodules', async () => {
+        const parentSg = { raw: jest.fn().mockResolvedValue(DIFF) };
+        const siblings = createSiblings(['a', 'b', 'nested/c'], parentSg);
+
+        const statuses = await Promise.all(siblings.map((sg) => gitHelper.getStatus(sg)));
+
+        expect(statuses.map((s) => s.current)).toEqual(['1111111..2222222', '', '3333333..4444444']);
+        expect(parentSg.raw.mock.calls).toEqual([[['diff', '--submodule=short', '--', 'a', 'b', 'nested/c']]]);
+      });
+
+      it('should run a new diff for requests made after the previous one completed', async () => {
+        const parentSg = { raw: jest.fn().mockResolvedValue('') };
+        const [sg] = createSiblings(['a'], parentSg);
+
+        await gitHelper.getStatus(sg);
+        await gitHelper.getStatus(sg);
+
+        expect(parentSg.raw).toHaveBeenCalledTimes(2);
+      });
+
+      it('should fail every pending request when the diff fails, and retry on the next one', async () => {
+        const parentSg = { raw: jest.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce('') };
+        const siblings = createSiblings(['a', 'b'], parentSg);
+
+        const results = await Promise.allSettled(siblings.map((sg) => gitHelper.getStatus(sg)));
+        expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected']);
+        expect(results[0].reason.message).toBe('Cannot get submodule status for parent/a in parent: boom');
+
+        await expect(gitHelper.getStatus(siblings[0])).resolves.toMatchObject({ current: '' });
+        expect(parentSg.raw).toHaveBeenCalledTimes(2);
+      });
     });
 
     describe('WIP commit detection', () => {

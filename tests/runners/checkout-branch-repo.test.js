@@ -80,7 +80,7 @@ function testSuiteFactory(setupHooks, testParams) {
         const fixtureContext = createFixtureContext(REPO_NAME, branches);
         fixtureContext.setWorkingBranch(workingBranch);
 
-        expectedCalls.fetch = [[['--all']]];
+        expectedCalls.fetch = [[['--all', '--jobs=8']]];
         expectedCalls.checkout = expectedCalls.checkout || [['foo-branch']];
         if (!expectedErr) {
           const res = await checkoutBranch(fixtureContext, REPO_NAME);
