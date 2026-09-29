@@ -89,7 +89,7 @@ function testSuiteFactory(setupHooks, testParams) {
           expectedCalls.status = expectedCalls.status || [[]];
           expectedCalls.stashList = [[]];
         } else {
-          await expect(checkoutBranch(fixtureContext, REPO_NAME)).rejects.toThrowError(new RegExp(expectedErr));
+          await expect(checkoutBranch(fixtureContext, REPO_NAME)).rejects.toThrow(new RegExp(expectedErr));
 
           expectedCalls.status = [];
           expectedCalls.stashList = [];

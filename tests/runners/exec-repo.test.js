@@ -12,7 +12,7 @@ function testSuiteFactory(setupHooks, testParams) {
 
     it('Should refuse to work if no command is provided', async () => {
       const fixtureContext = createFixtureContext(REPO_NAME);
-      await expect(execRepo(fixtureContext, REPO_NAME)).rejects.toThrowError(/No command to execute/);
+      await expect(execRepo(fixtureContext, REPO_NAME)).rejects.toThrow(/No command to execute/);
       expectDebugCalls();
     });
 

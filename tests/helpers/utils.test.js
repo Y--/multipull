@@ -143,17 +143,17 @@ function testSuiteFactory(setupHooks) {
 
       describe('Errors', () => {
         it('should throw an error if the collection have no element', async () => {
-          expect(() => utils.pickRandom([], 1)).toThrowError(/Cannot select 1 element: collection has only 0 element/);
+          expect(() => utils.pickRandom([], 1)).toThrow(/Cannot select 1 element: collection has only 0 element/);
         });
 
         it('should throw an error if the collection does not have enough elements', async () => {
-          expect(() => utils.pickRandom([42], 2)).toThrowError(
+          expect(() => utils.pickRandom([42], 2)).toThrow(
             /Cannot select 2 elements: collection has only 1 element/
           );
         });
 
         it('should throw an error if the count is not a number', async () => {
-          expect(() => utils.pickRandom([], 'hello')).toThrowError('Invalid count: hello');
+          expect(() => utils.pickRandom([], 'hello')).toThrow('Invalid count: hello');
         });
       });
     });

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://travis-ci.org/Y--/multipull"><img src="https://travis-ci.org/Y--/multipull.svg?branch=master" alt="Travis Build Status"></a>
+  <a href="https://app.travis-ci.com/Y--/multipull"><img src="https://app.travis-ci.com/Y--/multipull.svg?branch=master" alt="Travis Build Status"></a>
   <a href="https://codecov.io/gh/Y--/multipull"><img src="https://codecov.io/gh/Y--/multipull/branch/master/graph/badge.svg" alt="Codecov badge"></a>
 </p>
 

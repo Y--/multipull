@@ -106,7 +106,7 @@ function testSuiteFactory(setupHooks, testParams) {
         mocks.sg.raw.mockReturnValue('');
         mocks.ghRepo.listPullRequests.mockImplementationOnce(() => ({ data: [{}, {}] }));
 
-        await expect(runner(fixtureContext, 'repo-84')).rejects.toThrowError(
+        await expect(runner(fixtureContext, 'repo-84')).rejects.toThrow(
           /Found 2 pull requests open on 'foo-branch'/
         );
 

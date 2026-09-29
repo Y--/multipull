@@ -53,7 +53,7 @@ function testSuiteFactory(setupHooks) {
     });
 
     it('should return an error if the spec is invalid', async () => {
-      expect(() => new Processor(fixtureContext, 42)).toThrowError(/Invalid specification: 42/);
+      expect(() => new Processor(fixtureContext, 42)).toThrow(/Invalid specification: 42/);
     });
 
     it('should run a processor with multiple steps', async () => {

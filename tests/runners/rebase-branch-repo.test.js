@@ -152,7 +152,7 @@ function testSuiteFactory(setupHooks, testParams) {
         if (diffSummaryWillFail) {
           expectedRes.pull = { files: [''], summary: {} };
         } else if (expectedCalls.diffSummary) {
-          expectedRes.pull = diffSummary;
+          expectedRes.pull = { files: ['foo.js'], summary: { changes: 1, insertions: 2, deletions: 3 } };
         }
 
         expect(res).toEqual(expectedRes);

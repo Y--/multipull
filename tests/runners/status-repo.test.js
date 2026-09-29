@@ -307,7 +307,7 @@ function testSuiteFactory(setupHooks, testParams) {
           mocks.ghRepo.getCombinedStatus.mockImplementationOnce(() => wrapGHResponse(fixture.combinedStatus));
           mocks.ghRepo.getPullRequest.mockImplementationOnce(() => wrapGHResponse(fixture.pullRequest));
 
-          await expect(statusRepo(fixtureContext, REPO_NAME)).rejects.toThrowError(expectedError);
+          await expect(statusRepo(fixtureContext, REPO_NAME)).rejects.toThrow(expectedError);
         });
       });
     });

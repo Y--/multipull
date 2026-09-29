@@ -44,7 +44,7 @@ jest.mock('github-api', () =>
 );
 
 const sg = {};
-const simpleGitInstance = require('simple-git')();
+const simpleGitInstance = require('simple-git').simpleGit();
 for (
   let proto = Object.getPrototypeOf(simpleGitInstance);
   proto && proto !== Object.prototype;

@@ -22,7 +22,7 @@ function testSuiteFactory(setupHooks) {
       const { runner } = validateParameters;
 
       it('Should throw an error if the branch is not defined', async () => {
-        await expect(runner(fixtureContext)).rejects.toThrowError(/Usage/);
+        await expect(runner(fixtureContext)).rejects.toThrow(/Usage/);
       });
 
       [
@@ -50,7 +50,7 @@ function testSuiteFactory(setupHooks) {
         it(scenario.title, async () => {
           mocks.utils.exec.mockImplementationOnce(() => scenario.lsRemoteResult);
 
-          await expect(runner(fixtureContext)).rejects.toThrowError(/Usage/);
+          await expect(runner(fixtureContext)).rejects.toThrow(/Usage/);
           expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url']]);
         });
       });
@@ -60,7 +60,7 @@ function testSuiteFactory(setupHooks) {
           .mockImplementationOnce(() => ({ stdout: 'git@github.com:username/repo-84.git' }))
           .mockImplementationOnce(() => ({ stdout: 'main' }));
 
-        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'main'/);
+        await expect(runner(fixtureContext)).rejects.toThrow(/Refusing to create a PR on 'main'/);
         expect(mocks.utils.exec.mock.calls).toEqual([['git ls-remote --get-url'], ['git rev-parse --abbrev-ref HEAD']]);
       });
 
@@ -94,7 +94,7 @@ function testSuiteFactory(setupHooks) {
 
       it('Should throw an error if the branch is main', async () => {
         fixtureContext.workingBranch = 'main';
-        await expect(runner(fixtureContext)).rejects.toThrowError(/Refusing to create a PR on 'main'/);
+        await expect(runner(fixtureContext)).rejects.toThrow(/Refusing to create a PR on 'main'/);
       });
 
       it('Should say that it will processed if the parameters are correct', async () => {

@@ -1,14 +1,14 @@
 language: node_js
 node_js:
-  - "10"
-  - "11"
-  - "12"
-  - "13"
-  - "14"
+  - "22"
+  - "24"
+  - "26"
 install:
-  - npm install -g codecov
-  - npm install
+  - npm ci
 script:
   - npm run lint
   - npm test -- --coverage
-  - codecov
+after_success:
+  - curl -Os https://cli.codecov.io/latest/linux/codecov
+  - chmod +x codecov
+  - ./codecov upload-process

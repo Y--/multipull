@@ -58,9 +58,11 @@ describe('simple-git helper', () => {
     });
 
     it('should prefix any other error with the repository path', () => {
-      jest.doMock('simple-git', () => () => {
-        throw new Error('Something bad');
-      });
+      jest.doMock('simple-git', () => ({
+        simpleGit: () => {
+          throw new Error('Something bad');
+        },
+      }));
       const initSimpleGit = loadOriginalInitSimpleGit();
       const context = { getRepoPath: () => '/my/repo' };
 
