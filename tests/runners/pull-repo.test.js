@@ -10,6 +10,12 @@ const FETCHED_ONLY_PULL = { files: ['*** FETCHED ONLY, MERGE WOULD PRODUCE CONFL
 const PULL_ARGS = { '--all': null, '--stat': null };
 const PULL_REBASE_ARGS = { '--all': null, '--rebase': null, '--stat': null };
 const WIP_RESET_CALLS = [[['--soft', 'HEAD~1']], [['HEAD']]];
+const LAST_COMMIT_CALL = [['log', '--pretty=format:%s', '-1']];
+// Calls made in the parent to find its outdated submodules
+const submoduleChecks = (...paths) => [
+  [['ls-files', '--stage', '--', ...paths]],
+  [['submodule', 'status', '--', ...paths]],
+];
 
 setupTests(testSuiteFactory);
 
@@ -51,11 +57,22 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedCalls: { status: UP_TO_DATE_STATUS_CALLS },
       },
       {
-        status: { ahead: 0, behind: 0 },
-        config: { sub: true },
+        title: 'looks for outdated submodules when up to date',
+        status: { ahead: 0, behind: 0, modified: [], deleted: [], created: [], conflicted: [] },
+        submodules: [SUBMODULE_NAME],
         expectedPull: UP_TO_DATE_PULL,
         expectedCalls: {
-          raw: [[['submodule', 'update', '--recursive']], [['log', '--pretty=format:%s', '-1']]],
+          raw: [...submoduleChecks(SUBMODULE_NAME), LAST_COMMIT_CALL],
+          status: UP_TO_DATE_STATUS_CALLS,
+        },
+      },
+      {
+        title: "doesn't look for outdated submodules with --no-submodule",
+        status: { ahead: 0, behind: 0, modified: [], deleted: [], created: [], conflicted: [] },
+        config: { submodule: false },
+        submodules: [SUBMODULE_NAME],
+        expectedPull: UP_TO_DATE_PULL,
+        expectedCalls: {
           status: UP_TO_DATE_STATUS_CALLS,
         },
       },
@@ -138,6 +155,7 @@ function testSuiteFactory(setupHooks, testParams) {
         expectedPull: { files: ['a-file'], summary: {} },
         expectedCalls: {
           pull: [[null, null, PULL_ARGS]],
+          raw: [...submoduleChecks(SUBMODULE_NAME), LAST_COMMIT_CALL],
         },
       },
       {
@@ -153,6 +171,7 @@ function testSuiteFactory(setupHooks, testParams) {
         submodules: [SUBMODULE_NAME],
         expectedPull: { files: ['a-file'], summary: {} },
         expectedCalls: {
+          raw: [...submoduleChecks(SUBMODULE_NAME), LAST_COMMIT_CALL],
           add: [[['.', ':!' + SUBMODULE_NAME]]],
           commit: [[WIP_COMMIT_MESSAGE, null, { '--no-verify': null }]],
           pull: [[null, null, PULL_REBASE_ARGS]],
@@ -173,6 +192,7 @@ function testSuiteFactory(setupHooks, testParams) {
         submodules: [SUBMODULE_NAME, 'other-sub'],
         expectedPull: { files: ['a-file'], summary: {} },
         expectedCalls: {
+          raw: [...submoduleChecks(SUBMODULE_NAME, 'other-sub'), LAST_COMMIT_CALL],
           add: [[['.', ':!' + SUBMODULE_NAME, ':!other-sub']]],
           commit: [[WIP_COMMIT_MESSAGE, null, { '--no-verify': null }]],
           pull: [[null, null, PULL_REBASE_ARGS]],
@@ -309,7 +329,7 @@ function testSuiteFactory(setupHooks, testParams) {
             stashList: [[]],
             raw: [[['log', '--pretty=format:%s', '-1']]],
           },
-          expectedCalls
+          expectedCalls,
         );
 
         expectSgCalls(allExpectedCalls);
@@ -324,15 +344,18 @@ function testSuiteFactory(setupHooks, testParams) {
       fixtureContext.submoduleToParentMap.set(submoduleRepo, REPO_NAME);
 
       const parentSg = {
-        raw: jest.fn().mockResolvedValue(
-          `diff --git a/${SUBMODULE_NAME} b/${SUBMODULE_NAME}\nindex abc123..def456 160000\n--- a/${SUBMODULE_NAME}\n`
-        ),
+        raw: jest
+          .fn()
+          .mockResolvedValue(
+            `diff --git a/${SUBMODULE_NAME} b/${SUBMODULE_NAME}\nindex abc123..def456 160000\n--- a/${SUBMODULE_NAME}\n`,
+          ),
       };
       fixtureContext.gitAPIPerRepo.set(REPO_NAME, parentSg);
 
       const stash = { all: [], latest: null, total: 0 };
       mocks.sg.stashList.mockImplementationOnce(() => stash);
       mocks.sg.raw.mockReturnValue('');
+      fixtureContext.markRepoDone(REPO_NAME); // The parent was pulled
 
       const res = await pullRepo(fixtureContext, submoduleRepo);
 
@@ -380,3 +403,98 @@ function testSuiteFactory(setupHooks, testParams) {
     }
   }
 }
+
+describe('Pull repo - submodules', () => {
+  const submodules = require('../../lib/helpers/submodules');
+  const SUBMODULE = `${REPO_NAME}/${SUBMODULE_NAME}`;
+  const OLD = 'a'.repeat(40);
+  const NEW = 'b'.repeat(40);
+  let fixtureContext;
+
+  beforeEach(() => {
+    for (const fn of Object.values(mocks.sg)) {
+      if (jest.isMockFunction(fn)) {
+        fn.mockReset();
+      }
+    }
+    fixtureContext = createFixtureContext(REPO_NAME);
+    fixtureContext.submoduleToParentMap.set(SUBMODULE, REPO_NAME);
+    fixtureContext.repos.push(SUBMODULE);
+    mocks.sg.status.mockImplementation(() => ({
+      ahead: 0,
+      behind: 0,
+      current: 'main',
+      modified: [],
+      deleted: [],
+      created: [],
+      conflicted: [],
+    }));
+    mocks.sg.stashList.mockImplementation(() => ({ all: [], latest: null, total: 0 }));
+    mocks.sg.raw.mockResolvedValue('');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should compute the status of a submodule once its parent is done', async () => {
+    let done = false;
+    const pending = pullRepo(fixtureContext, SUBMODULE).then(() => (done = true));
+
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(done).toBe(false);
+    expect(mocks.sg.raw).not.toHaveBeenCalled();
+
+    fixtureContext.markRepoDone(REPO_NAME);
+    await pending;
+    expect(done).toBe(true);
+  });
+
+  it("should mark the parent as done even when it fails, so that its submodules don't wait forever", async () => {
+    mocks.sg.fetch.mockRejectedValue(new Error('network down'));
+
+    await expect(pullRepo(fixtureContext, REPO_NAME)).rejects.toThrow('network down');
+    await expect(pullRepo(fixtureContext, SUBMODULE)).resolves.toMatchObject({ status: { isSubmodule: true } });
+  });
+
+  it('should show the updated submodules, and compute the status of the parent again', async () => {
+    jest.spyOn(submodules, 'updateOutdatedSubmodules').mockResolvedValue({
+      updated: [{ path: SUBMODULE_NAME, from: OLD, to: NEW }],
+      skipped: [],
+    });
+
+    const [parent, sub] = await Promise.all([
+      pullRepo(fixtureContext, SUBMODULE),
+      pullRepo(fixtureContext, REPO_NAME),
+    ]).then(([s, p]) => [p, s]);
+
+    expect(parent.pull).toEqual(UP_TO_DATE_PULL);
+    expect(mocks.sg.status).toHaveBeenCalledTimes(2); // Before pulling, and after the submodule update
+    expect(sub.status.current).toBe('aaaaaaa..bbbbbbb (updated)');
+  });
+
+  it('should show why an outdated submodule was not updated', async () => {
+    jest.spyOn(submodules, 'updateOutdatedSubmodules').mockResolvedValue({
+      updated: [],
+      skipped: [{ path: SUBMODULE_NAME, reason: 'local changes' }],
+    });
+    // The parent's diff shows the submodule out of sync
+    mocks.sg.raw.mockImplementation(async ([command]) =>
+      command === 'diff' ? `diff --git a/${SUBMODULE_NAME} b/${SUBMODULE_NAME}\nindex 1111111..2222222 160000\n` : '',
+    );
+
+    const [, sub] = await Promise.all([pullRepo(fixtureContext, REPO_NAME), pullRepo(fixtureContext, SUBMODULE)]);
+
+    expect(mocks.sg.status).toHaveBeenCalledTimes(1); // Up to date and nothing updated: the status is reused
+    expect(sub.status.current).toBe('1111111..2222222 (not updated: local changes)');
+  });
+
+  it('should not update the submodules with --no-submodule', async () => {
+    const spy = jest.spyOn(submodules, 'updateOutdatedSubmodules');
+    fixtureContext.config.submodule = false;
+
+    await pullRepo(fixtureContext, REPO_NAME);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+});

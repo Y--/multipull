@@ -167,7 +167,29 @@ eg. `multipull`
 
 Notes:
 * will attempt to rebase if need be;
-* abort pulling of a remote branch if it would produce conflicts.
+* abort pulling of a remote branch if it would produce conflicts;
+* updates the outdated submodules (see below).
+
+#### Submodules
+
+After pulling a repository, `multipull` updates (`git submodule update --recursive`) its submodules that are not
+checked out at the commit recorded in the repository, as long as no work can be lost, i.e. submodules:
+* that are initialized;
+* without local changes (untracked files are fine);
+* checked out at a commit that is either:
+  * contained in the recorded one (the submodule is behind);
+  * or, on a detached HEAD, contained in a remote branch or a tag (e.g. left there by a `git submodule update` on
+    another branch).
+
+The other submodules are left untouched, and the reason is shown in the summary, e.g. `not updated: local changes`,
+`not updated: on branch <branch>, with commits that <repo> doesn't have` or
+`not updated: has commits that are on no branch`.
+
+#### Parameter `no-submodule`
+
+Don't update the submodules.
+
+eg. `multipull --no-submodule`
 
 ### multipush
 

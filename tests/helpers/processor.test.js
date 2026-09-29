@@ -111,6 +111,45 @@ function testSuiteFactory(setupHooks) {
       expect(mockRunner2.mock.calls).toHaveLength(0);
     });
 
+    it('should report the error, without crashing, when the status cannot be computed after it', async () => {
+      const runner = jest.fn((context, repoName) => {
+        if (repoName === 'repo-42') {
+          throw new Error('Failed');
+        }
+        return 'result for ' + repoName;
+      });
+      const getRepoCommonStatus = jest.spyOn(fixtureContext, 'getRepoCommonStatus').mockImplementation(() => {
+        throw new TypeError('sg.status is not a function');
+      });
+
+      try {
+        const results = await new Processor(fixtureContext, runner).run();
+
+        expect(results).toHaveLength(3);
+        expect(results[1].err.message).toEqual('Failed');
+        expect(results[1].res).toBeUndefined();
+        expectValidResult(results[0], 'result');
+      } finally {
+        getRepoCommonStatus.mockRestore();
+      }
+    });
+
+    it("should not compute the status of a repository that doesn't exist", async () => {
+      const runner = jest.fn(() => {
+        throw new Error("Cannot start: repository '/my/root/folder/repo-1' does not exist");
+      });
+      const getRepoCommonStatus = jest.spyOn(fixtureContext, 'getRepoCommonStatus');
+
+      try {
+        const results = await new Processor(fixtureContext, runner).run();
+
+        expect(results.every((r) => /does not exist/.test(r.err.message))).toBe(true);
+        expect(getRepoCommonStatus).not.toHaveBeenCalled();
+      } finally {
+        getRepoCommonStatus.mockRestore();
+      }
+    });
+
     it('should interrupt processor if an error occurs during a single step', async () => {
       const mockRunner1 = jest.fn(() => {
         throw new Error('Failed');
