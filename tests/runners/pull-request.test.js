@@ -8,7 +8,7 @@ const [validateParameters, checkoutStep, selectRepositories, prCreation, prBodyG
 
 setupTests(testSuiteFactory);
 
-function testSuiteFactory(setupHooks, testParams) {
+function testSuiteFactory(setupHooks) {
   describe('Pull Request', () => {
     setupHooks();
 
@@ -808,21 +808,6 @@ function testSuiteFactory(setupHooks, testParams) {
       });
     });
   });
-
-  function clone(o) {
-    return JSON.parse(JSON.stringify(o));
-  }
-
-  function expectDebugCalls() {
-    const { calls } = mocks.debug.mock;
-    if (testParams.debug) {
-      expect(calls).toHaveLength(1);
-      expect(calls[0]).toHaveLength(1);
-      expect(calls[0][0]).toEqual('Processing repository repo-84...');
-    } else {
-      expect(calls).toHaveLength(0);
-    }
-  }
 
   function genRepoMapWithValues(repos) {
     return new Map(repos.map((r) => [r, { html_url: r + '-pr-url', number: 42 }]));

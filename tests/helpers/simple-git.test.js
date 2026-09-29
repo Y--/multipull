@@ -264,7 +264,7 @@ describe('simple-git helper', () => {
     });
 
     it("should mark the diff as unknown when the revision doesn't exist on origin", async () => {
-      const revList = new Error("fatal: bad revision: unknown revision or path not in the working tree.");
+      const revList = new Error('fatal: bad revision: unknown revision or path not in the working tree.');
       const sg = setupSg({ status: { current: 'feature' }, revList });
 
       const res = await gitHelper.commonStatus(sg, 'repo-1', 'main');
