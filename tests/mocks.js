@@ -15,33 +15,16 @@ jest.mock('debug', () => {
   return debugMock;
 });
 
-// Own class so that `getGHRepo` patches `MockRepository.prototype` instead of `Object.prototype`
-class MockRepository {}
-const mockGHRepo = new MockRepository();
+// `@octokit/rest` is ESM-only and can't be loaded by jest: never load the real one
+jest.mock('@octokit/rest', () => ({ Octokit: jest.fn() }));
 
-const ghRepoFunctionNames = [
-  'approveReviewRequest',
-  'createPullRequest',
-  'createReviewRequest',
-  'getCombinedStatus',
-  'getPullRequest',
-  'getReviews',
-  'graphql',
-  'listPullRequests',
-  'mergePullRequest',
-  'updatePullRequest',
-];
-for (const funcName of ghRepoFunctionNames) {
-  mockGHRepo[funcName] = jest.fn();
+const { GitHubRepository } = require('../lib/helpers/github');
+const mockGHRepo = { owner: 'foo-owner', repo: null };
+for (const funcName of Object.getOwnPropertyNames(GitHubRepository.prototype)) {
+  if (funcName !== 'constructor' && !funcName.startsWith('_')) {
+    mockGHRepo[funcName] = jest.fn();
+  }
 }
-
-jest.mock('github-api', () =>
-  jest.fn().mockImplementation(() => ({
-    getRepo() {
-      return mockGHRepo;
-    },
-  })),
-);
 
 const sg = {};
 const simpleGitInstance = require('simple-git').simpleGit();
@@ -58,6 +41,11 @@ for (
 }
 
 const gitHelper = require('../lib/helpers/simple-git');
+gitHelper.createGitHubRepository = (owner, repo) => {
+  mockGHRepo.owner = owner;
+  mockGHRepo.repo = repo;
+  return mockGHRepo;
+};
 gitHelper.initSimpleGit = (context, repo) => {
   sg.context = context;
   sg.repo = repo;

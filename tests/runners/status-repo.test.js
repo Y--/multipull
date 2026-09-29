@@ -3,7 +3,6 @@ const { createFixtureContext, setupTests } = require('../utils');
 const statusRepo = require('../../lib/runners/status-repo');
 
 const REPO_NAME = 'repo-1';
-const AcceptHeader = 'shadow-cat-preview';
 const fixtureContext = createFixtureContext(REPO_NAME);
 setupTests(testSuiteFactory);
 
@@ -272,7 +271,7 @@ function testSuiteFactory(setupHooks, testParams) {
             ...expectedResult,
           });
 
-          const expectedLsPRArgs = { head: 'foo-owner:foo-branch', state: 'open', AcceptHeader };
+          const expectedLsPRArgs = { head: 'foo-owner:foo-branch', state: 'open' };
           expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([[expectedLsPRArgs]]);
 
           const prNumberCalls = fixture.pullRequests ? fixture.pullRequests.map((pr) => [pr.number]) : [];

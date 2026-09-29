@@ -18,6 +18,43 @@ function createSg({ repo = 'repo-1', submoduleToParentMap = new Map(), parentSg 
 }
 
 describe('simple-git helper', () => {
+  describe('getGHRepo', () => {
+    [
+      'git@github.com:foo-owner/repo-84.git',
+      'git@github.com:foo-owner/repo-84',
+      'https://github.com/foo-owner/repo-84.git',
+      'https://github.com/foo-owner/repo-84',
+      'ssh://git@github.com/foo-owner/repo-84.git',
+      'https://github.com/foo-owner/repo-84.git\n',
+    ].forEach((remoteUrl) => {
+      it(`should create the GitHub repository from '${remoteUrl.trim()}'`, async () => {
+        const sg = { listRemote: jest.fn(async () => remoteUrl) };
+
+        const ghRepo = await gitHelper.getGHRepo(sg);
+
+        expect(sg.listRemote.mock.calls).toEqual([[['--get-url']]]);
+        expect(ghRepo).toMatchObject({ owner: 'foo-owner', repo: 'repo-84' });
+      });
+    });
+
+    it('should keep dots in the repository name', async () => {
+      const sg = { listRemote: jest.fn(async () => 'git@github.com:foo-owner/my.repo.git') };
+      await expect(gitHelper.getGHRepo(sg)).resolves.toMatchObject({ owner: 'foo-owner', repo: 'my.repo' });
+    });
+
+    it('should throw if there is no remote', async () => {
+      const sg = { listRemote: jest.fn(async () => '\n') };
+      await expect(gitHelper.getGHRepo(sg)).rejects.toThrow('Cannot find remote url');
+    });
+
+    it('should throw if the remote is not on GitHub', async () => {
+      const sg = { listRemote: jest.fn(async () => 'git@gitlab.com:foo-owner/repo-84.git') };
+      await expect(gitHelper.getGHRepo(sg)).rejects.toThrow(
+        "Remote URL 'git@gitlab.com:foo-owner/repo-84.git' doesn't match the expected format",
+      );
+    });
+  });
+
   describe('initSimpleGit', () => {
     afterEach(() => {
       jest.dontMock('simple-git');

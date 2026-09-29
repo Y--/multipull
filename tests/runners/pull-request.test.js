@@ -138,7 +138,6 @@ function testSuiteFactory(setupHooks) {
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
-              AcceptHeader: 'shadow-cat-preview',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },
@@ -161,7 +160,6 @@ function testSuiteFactory(setupHooks) {
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
-              AcceptHeader: 'shadow-cat-preview',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },
@@ -194,7 +192,6 @@ function testSuiteFactory(setupHooks) {
         expect(mocks.ghRepo.listPullRequests.mock.calls).toEqual([
           [
             {
-              AcceptHeader: 'shadow-cat-preview',
               head: 'foo-owner:foo-branch',
               state: 'open',
             },
@@ -533,7 +530,7 @@ function testSuiteFactory(setupHooks) {
 
         expect(mocks.ghRepo.createPullRequest.mock.calls).toEqual([]);
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
-        expect(mocks.ghRepo.graphql.mock.calls).toEqual([]);
+        expect(mocks.ghRepo.markPullRequestReadyForReview.mock.calls).toEqual([]);
       });
 
       it('Should create a draft PR with no reviewer', async () => {
@@ -552,7 +549,6 @@ function testSuiteFactory(setupHooks) {
               head: 'foo-branch',
               base: 'main',
               draft: true,
-              AcceptHeader: 'shadow-cat-preview',
             },
           ],
         ]);
@@ -614,15 +610,7 @@ function testSuiteFactory(setupHooks) {
 
         await runner(fixtureContext, 'repo-84');
 
-        expect(mocks.ghRepo.graphql.mock.calls).toEqual([
-          [
-            {
-              AcceptHeader: 'shadow-cat-preview',
-              query:
-                'mutation { markPullRequestReadyForReview(input: { pullRequestId: "node-42" }) { clientMutationId } }',
-            },
-          ],
-        ]);
+        expect(mocks.ghRepo.markPullRequestReadyForReview.mock.calls).toEqual([['node-42']]);
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([
           [42, { reviewers: ['boss'], team_reviewers: [] }],
         ]);
@@ -637,7 +625,7 @@ function testSuiteFactory(setupHooks) {
 
         await runner(fixtureContext, 'repo-84');
 
-        expect(mocks.ghRepo.graphql.mock.calls).toEqual([]);
+        expect(mocks.ghRepo.markPullRequestReadyForReview.mock.calls).toEqual([]);
         expect(mocks.ghRepo.createReviewRequest.mock.calls).toEqual([]);
         expect(pr.updateDescription).toEqual(true);
       });
