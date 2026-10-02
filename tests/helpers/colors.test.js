@@ -61,6 +61,14 @@ describe('colors', () => {
     });
   });
 
+  it('should use the orange of the 256 colors palette, or yellow with fewer colors', () => {
+    expect(colors.createColors(TTY).orange('x')).toBe('\x1B[38;5;208mx\x1B[39m');
+    const ttyWith16Colors = createStream(true);
+    ttyWith16Colors.getColorDepth = () => 4;
+    expect(colors.createColors(ttyWith16Colors).orange('x')).toBe('\x1B[33mx\x1B[39m');
+    expect(colors.createColors(PIPE).orange('x')).toBe('x');
+  });
+
   it('should apply the styles in order', () => {
     expect(colors.createColors(TTY).apply('x', ['bold', 'red'])).toBe('\x1B[31m\x1B[1mx\x1B[22m\x1B[39m');
     expect(colors.createColors(PIPE).apply('x', ['bold', 'red'])).toBe('x');
