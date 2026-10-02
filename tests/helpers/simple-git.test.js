@@ -18,6 +18,57 @@ function createSg({ repo = 'repo-1', submoduleToParentMap = new Map(), parentSg 
 }
 
 describe('simple-git helper', () => {
+  describe('countWorktrees', () => {
+    const path = require('path');
+    let tmp;
+    beforeEach(() => {
+      tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'multipull-worktrees-'));
+    });
+
+    afterEach(() => {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    });
+
+    // A repository with linked worktrees `names`; `existing`: the ones whose directory still exists
+    function createRepo(names, existing = names) {
+      const repo = path.join(tmp, 'repo');
+      for (const name of names) {
+        const adminDir = path.join(repo, '.git', 'worktrees', name);
+        const worktree = path.join(tmp, 'worktrees', name);
+        fs.mkdirSync(adminDir, { recursive: true });
+        fs.writeFileSync(path.join(adminDir, 'gitdir'), path.join(worktree, '.git') + '\n');
+        fs.writeFileSync(path.join(adminDir, 'commondir'), '../..\n'); // Like git: points to the main `.git`
+        if (existing.includes(name)) {
+          fs.mkdirSync(worktree, { recursive: true });
+          fs.writeFileSync(path.join(worktree, '.git'), `gitdir: ${adminDir}\n`);
+        }
+      }
+      fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+      return repo;
+    }
+
+    it('should return 0 without linked worktrees', async () => {
+      await expect(gitHelper.countWorktrees(createRepo([]))).resolves.toBe(0);
+    });
+
+    it('should count the linked worktrees', async () => {
+      await expect(gitHelper.countWorktrees(createRepo(['a', 'b', 'c']))).resolves.toBe(3);
+    });
+
+    it('should not count the worktrees whose directory was deleted (prunable)', async () => {
+      await expect(gitHelper.countWorktrees(createRepo(['a', 'b', 'c'], ['b']))).resolves.toBe(1);
+    });
+
+    it('should count the worktrees of the main repository from a linked worktree', async () => {
+      createRepo(['a', 'b']);
+      await expect(gitHelper.countWorktrees(path.join(tmp, 'worktrees', 'a'))).resolves.toBe(2);
+    });
+
+    it('should return 0 for a directory that is not a repository', async () => {
+      await expect(gitHelper.countWorktrees(path.join(tmp, 'nothing-here'))).resolves.toBe(0);
+    });
+  });
+
   describe('getGHRepo', () => {
     [
       'git@github.com:foo-owner/repo-84.git',

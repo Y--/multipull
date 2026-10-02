@@ -74,6 +74,7 @@ Pull Request | When using `multistatus --pr`: displays the link of an existing p
 Mergeable    | Indicate GitHub's mergeable status (i.e no conflict)
 Build        | When using `multistatus --ci`: displays the build status on this branch (based on GitHub checks)
 Reviews      | Indicate the number of reviews and comment on GitHub's pull request
+WT           | Number of linked worktrees (`git worktree list`, without the main one and the prunable ones)
 S            | Number of stashes
 ??           | Number of untracked files
 M            | Number of modified files
