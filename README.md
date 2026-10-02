@@ -220,6 +220,15 @@ Displays the status of the current repositories
 
 eg. `multistatus`
 
+#### With worktrees (`--worktree` or `--wt`)
+
+Also displays the status of every linked worktree (`git worktree list`) of the repositories, below their repository
+(e.g. `wt:my-feature`): current branch, tracking branch, ahead/behind counts and local changes. Stashes are shared by
+all the worktrees of a repository, so they are only shown on the repository itself. Can be combined with `--pr` and
+`--ci`.
+
+eg. `multistatus --wt`
+
 #### With Pull Request (`--pr`)
 
 On the repositories that are on a branch different from the default branch, and have an open Github pull request,  `multistatus --pr` will output:

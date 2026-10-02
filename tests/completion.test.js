@@ -84,8 +84,21 @@ describe('Completion', () => {
     });
 
     it('should only suggest the dependent options once their parent is used', () => {
-      expect(names('multistatus', [])).toEqual(['pr', 'ci', 'open-ci', 'this', 'all', 'raw']);
-      expect(names('multistatus', ['--pr'])).toEqual(['list', 'open', 'ci', 'open-ci', 'this', 'all', 'raw']);
+      expect(names('multistatus', [])).toEqual(['pr', 'ci', 'open-ci', 'worktree', 'wt', 'this', 'all', 'raw']);
+      expect(names('multistatus', ['--pr'])).toEqual([
+        'list',
+        'open',
+        'ci',
+        'open-ci',
+        'worktree',
+        'wt',
+        'this',
+        'all',
+        'raw',
+      ]);
+      // Aliases: once one is used, the other isn't suggested
+      expect(names('multistatus', ['--wt'])).toEqual(['pr', 'ci', 'open-ci', 'this', 'all', 'raw']);
+      expect(names('multistatus', ['--worktree'])).toEqual(['pr', 'ci', 'open-ci', 'this', 'all', 'raw']);
       expect(names('multistatus', ['--pr', '--open'])).toContain('files');
       expect(names('multistatus', ['--ci'])).toEqual(expect.arrayContaining(['full', 'ci-url']));
     });
@@ -169,7 +182,7 @@ describe('Completion', () => {
     describe('multistatus', () => {
       it('should suggest the flags on an empty word', () => {
         const { values, directive } = runCompleter('multistatus', ['']);
-        expect(values).toEqual(['--pr', '--ci', '--open-ci', '--this', '--all', '--raw']);
+        expect(values).toEqual(['--pr', '--ci', '--open-ci', '--worktree', '--wt', '--this', '--all', '--raw']);
         expect(directive).toBe(4); // No file completion
       });
 
@@ -180,7 +193,7 @@ describe('Completion', () => {
 
       it('should suggest --list and --open after --pr', () => {
         const { values } = runCompleter('multistatus', ['--pr', '--']);
-        expect(values).toEqual(['--list', '--open', '--ci', '--open-ci', '--this', '--all', '--raw']);
+        expect(values).toEqual(['--list', '--open', '--ci', '--open-ci', '--worktree', '--wt', '--this', '--all', '--raw']);
       });
 
       it('should filter on the current word', () => {

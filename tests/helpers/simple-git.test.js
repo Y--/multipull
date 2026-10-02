@@ -67,6 +67,16 @@ describe('simple-git helper', () => {
     it('should return 0 for a directory that is not a repository', async () => {
       await expect(gitHelper.countWorktrees(path.join(tmp, 'nothing-here'))).resolves.toBe(0);
     });
+
+    it('should list the names and paths of the existing linked worktrees', async () => {
+      const repo = createRepo(['a', 'b', 'gone'], ['a', 'b']);
+      const worktrees = await gitHelper.listWorktrees(repo);
+
+      expect(worktrees.sort((w1, w2) => w1.name.localeCompare(w2.name))).toEqual([
+        { name: 'a', path: path.join(tmp, 'worktrees', 'a') },
+        { name: 'b', path: path.join(tmp, 'worktrees', 'b') },
+      ]);
+    });
   });
 
   describe('getGHRepo', () => {
@@ -455,6 +465,24 @@ describe('simple-git helper', () => {
         await expect(gitHelper.getStatus(siblings[0])).resolves.toMatchObject({ current: '' });
         expect(parentSg.raw).toHaveBeenCalledTimes(2);
       });
+    });
+
+    it("should not look at the stashes and the worktrees of a linked worktree (they're shared with its repository)", async () => {
+      const sg = createSg({ repo: 'repo-1/wt:feature' });
+      sg.context.worktreeToParentMap = new Map([['repo-1/wt:feature', 'repo-1']]);
+      sg.context.getRepoPath = jest.fn(() => '/somewhere/feature');
+      sg.status.mockResolvedValue({ current: 'feature', tracking: 'origin/feature' });
+      sg.raw.mockResolvedValue('');
+      const countWorktrees = jest.spyOn(gitHelper, 'countWorktrees');
+
+      const res = await gitHelper.commonStatus(sg, 'repo-1/wt:feature', 'main');
+
+      expect(res.status.current).toBe('feature');
+      expect(res.stash).toEqual({ all: [], latest: null, total: 0 });
+      expect(res).not.toHaveProperty('worktrees');
+      expect(sg.stashList).not.toHaveBeenCalled();
+      expect(countWorktrees).not.toHaveBeenCalled();
+      countWorktrees.mockRestore();
     });
 
     describe('WIP commit detection', () => {

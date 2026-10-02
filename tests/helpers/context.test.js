@@ -33,6 +33,50 @@ describe('Context', () => {
       ]);
     });
 
+    describe('Worktrees', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(gitHelper, 'getSubmodules')
+          .mockImplementation(async (root, repo) => (repo === 'repo-a' ? ['repo-a/sub'] : []));
+        jest
+          .spyOn(gitHelper, 'listWorktrees')
+          .mockImplementation(async (repoPath) =>
+            repoPath === '/my/root/folder/repo-a' ? [{ name: 'feature', path: '/tmp/somewhere/feature' }] : [],
+          );
+      });
+
+      [{ worktree: true }, { wt: true }].forEach((flag) => {
+        it(`should register the linked worktrees as repositories with ${JSON.stringify(flag)}`, async () => {
+          const context = createContext({ ...flag, branches: 'repo-a:develop' });
+          await context.init({ worktrees: true });
+
+          expect(context.repos).toEqual(['repo-a', 'repo-b', 'repo-a/sub', 'repo-a/wt:feature']);
+          expect(context.worktreeToParentMap).toEqual(new Map([['repo-a/wt:feature', 'repo-a']]));
+          expect(context.getRepoPath('repo-a/wt:feature')).toBe('/tmp/somewhere/feature');
+          expect(context.getRepoPath('repo-a')).toBe('/my/root/folder/repo-a');
+          expect(context.getDefaultBranch('repo-a/wt:feature')).toBe('develop'); // The one of its repository
+          // Submodules don't have worktrees of their own here
+          expect(gitHelper.listWorktrees.mock.calls).toEqual([['/my/root/folder/repo-a'], ['/my/root/folder/repo-b']]);
+        });
+      });
+
+      it('should not look for worktrees without --worktree/--wt', async () => {
+        const context = createContext();
+        await context.init({ worktrees: true });
+
+        expect(context.repos).toEqual(['repo-a', 'repo-b', 'repo-a/sub']);
+        expect(gitHelper.listWorktrees).not.toHaveBeenCalled();
+      });
+
+      it('should not look for worktrees when the command does not support them', async () => {
+        const context = createContext({ wt: true });
+        await context.init();
+
+        expect(context.repos).toEqual(['repo-a', 'repo-b', 'repo-a/sub']);
+        expect(gitHelper.listWorktrees).not.toHaveBeenCalled();
+      });
+    });
+
     it('should leave the repositories untouched without submodules', async () => {
       jest.spyOn(gitHelper, 'getSubmodules').mockResolvedValue([]);
 
