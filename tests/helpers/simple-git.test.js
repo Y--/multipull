@@ -485,6 +485,35 @@ describe('simple-git helper', () => {
       countWorktrees.mockRestore();
     });
 
+    describe('Obsolete worktrees', () => {
+      function createWorktreeSg({ tracking, upstream }) {
+        const sg = createSg({ repo: 'repo-1/wt:feature' });
+        sg.context.worktreeToParentMap = new Map([['repo-1/wt:feature', 'repo-1']]);
+        sg.status.mockResolvedValue({ current: 'feature', tracking });
+        sg.raw.mockImplementation(async ([command]) => (command === 'rev-parse' ? upstream : ''));
+        return sg;
+      }
+
+      it('should flag a worktree whose branch tracks a remote branch that is gone', async () => {
+        const sg = createWorktreeSg({ tracking: 'origin/feature', upstream: '' });
+
+        const res = await gitHelper.commonStatus(sg, 'repo-1/wt:feature', 'main');
+
+        expect(res.upstreamGone).toBe(true);
+        expect(sg.raw.mock.calls).toContainEqual([['rev-parse', '--verify', '--quiet', '@{upstream}']]);
+      });
+
+      it('should not flag a worktree whose remote branch still exists', async () => {
+        const sg = createWorktreeSg({ tracking: 'origin/feature', upstream: '69f6cd4cba7d\n' });
+        await expect(gitHelper.commonStatus(sg, 'repo-1/wt:feature', 'main')).resolves.not.toHaveProperty('upstreamGone');
+      });
+
+      it('should not flag a worktree without upstream (never pushed, detached HEAD)', async () => {
+        const sg = createWorktreeSg({ tracking: null, upstream: '' });
+        await expect(gitHelper.commonStatus(sg, 'repo-1/wt:feature', 'main')).resolves.not.toHaveProperty('upstreamGone');
+      });
+    });
+
     describe('WIP commit detection', () => {
       const cases = [
         ['WIP', true],

@@ -57,6 +57,30 @@ describe('printResults', () => {
       expect(table).not.toContain(`\x1B[31m${ORANGE}`);
     });
 
+    it('should show ☠️ in the Tracking column for the worktrees whose remote branch is gone', () => {
+      process.stdout.isTTY = false;
+      const context = createContext();
+      printResults(context, new Date(), [
+        result('repo-1', { current: 'main', tracking: 'origin/main' }),
+        result('repo-1/wt:feature', { current: 'feature', tracking: 'origin/feature' }, { upstreamGone: true }),
+      ]);
+      const rows = mocks.logger.logInfo.mock.calls[0][0].split('\n').filter((line) => line.startsWith('│'));
+
+      expect(rows[0]).not.toMatch(/Gone/);
+      expect(rows.find((row) => row.includes('wt:feature'))).toMatch(/wt:feature +│ feature +│ ☠️ +│/);
+    });
+
+    it('should show ☠️ next to a tracking branch that has another name', () => {
+      process.stdout.isTTY = false;
+      printResults(createContext(), new Date(), [
+        result('repo-1', { current: 'main', tracking: 'origin/main' }),
+        result('repo-1/wt:feature', { current: 'feature', tracking: 'origin/other' }, { upstreamGone: true }),
+      ]);
+      const table = mocks.logger.logInfo.mock.calls[0][0];
+
+      expect(table).toMatch(/wt:feature +│ feature +│ ☠️ origin\/other +│/);
+    });
+
     it('should show the worktrees in yellow in a terminal with fewer colors', () => {
       process.stdout.isTTY = true;
       process.stdout.getColorDepth = () => 4;

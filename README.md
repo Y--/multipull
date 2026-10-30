@@ -67,7 +67,7 @@ Parameter    | Description
 ------------ | -------------
 Repo         | Repository's name
 Current      | Current branch (if different from default one)
-Tracking     | Tracking branch (if different from default one)
+Tracking     | Tracking branch (if different from default one), ☠️ when using `multistatus --wt` on the worktrees whose remote branch is gone
 Pushed       | When using `multipush`: displays a confirmation or an reason for not doing so
 Merged       | When using `multimerge`: displays a confirmation or an reason for not doing so
 Pull Request | When using `multistatus --pr`: displays the link of an existing pull request on the current branch
@@ -226,6 +226,10 @@ Also displays the status of every linked worktree (`git worktree list`) of the r
 (e.g. `wt:my-feature`): current branch, tracking branch, ahead/behind counts and local changes. Stashes are shared by
 all the worktrees of a repository, so they are only shown on the repository itself. Can be combined with `--pr` and
 `--ci`.
+
+Worktrees whose branch tracks a remote branch that is gone (e.g. deleted once its pull request was merged) are
+flagged with ☠️ in the `Tracking` column. Remote branches are only known to be gone once they are pruned (e.g.
+`git fetch --prune`, or `fetch.prune` set to `true`).
 
 eg. `multistatus --wt`
 
