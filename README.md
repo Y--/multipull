@@ -186,6 +186,14 @@ The other submodules are left untouched, and the reason is shown in the summary,
 `not updated: on branch <branch>, with commits that <repo> doesn't have` or
 `not updated: has commits that are on no branch`.
 
+#### Parameter `worktree` (or `wt`)
+
+Also pulls the linked worktrees (`git worktree list`) of the repositories, once their repository was fetched: their
+branch is rebased (or merged) locally on its upstream, with the same rules as the repositories (local changes are kept
+with a WIP commit, aborted on conflicts). Worktrees whose remote branch is gone (☠️) are left untouched.
+
+eg. `multipull --wt`
+
 #### Parameter `no-submodule`
 
 Don't update the submodules.

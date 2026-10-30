@@ -498,3 +498,98 @@ describe('Pull repo - submodules', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe('Pull repo - worktrees', () => {
+  const WORKTREE = `${REPO_NAME}/wt:feature`;
+  const BEHIND = {
+    ahead: 0,
+    behind: 1,
+    current: 'feature',
+    tracking: 'origin/feature',
+    modified: [],
+    deleted: [],
+    created: [],
+    conflicted: [],
+  };
+  let fixtureContext;
+
+  beforeEach(() => {
+    for (const fn of Object.values(mocks.sg)) {
+      if (jest.isMockFunction(fn)) {
+        fn.mockReset();
+      }
+    }
+    fixtureContext = createFixtureContext(REPO_NAME);
+    fixtureContext.repos.push(WORKTREE);
+    fixtureContext.worktreeToParentMap.set(WORKTREE, REPO_NAME);
+    fixtureContext.markRepoDone(REPO_NAME);
+    mocks.sg.stashList.mockResolvedValue({ all: [], latest: null, total: 0 });
+    mocks.sg.raw.mockImplementation(async ([command]) => (command === 'rev-parse' ? 'abc123\n' : ''));
+    mocks.sg.diffSummary.mockResolvedValue({ files: [{ file: 'a.js' }], changed: 1, insertions: 2, deletions: 0 });
+    mocks.sg.log.mockResolvedValue({ latest: { message: WIP_COMMIT_MESSAGE } });
+  });
+
+  it('should wait for its repository, which fetched the remote branches', async () => {
+    const context = createFixtureContext(REPO_NAME);
+    context.repos.push(WORKTREE);
+    context.worktreeToParentMap.set(WORKTREE, REPO_NAME);
+    mocks.sg.status.mockResolvedValue({ ...BEHIND, behind: 0 });
+
+    let done = false;
+    const pending = pullRepo(context, WORKTREE).then(() => (done = true));
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(done).toBe(false);
+    expect(mocks.sg.status).not.toHaveBeenCalled();
+
+    context.markRepoDone(REPO_NAME);
+    await pending;
+    expect(done).toBe(true);
+  });
+
+  it('should not fetch nor pull: the upstream is merged locally', async () => {
+    mocks.sg.status.mockResolvedValue(BEHIND);
+
+    const res = await pullRepo(fixtureContext, WORKTREE);
+
+    expect(mocks.sg.fetch).not.toHaveBeenCalled();
+    expect(mocks.sg.pull).not.toHaveBeenCalled();
+    expect(mocks.sg.merge.mock.calls).toEqual([[['@{upstream}']]]);
+    expect(mocks.sg.diffSummary.mock.calls).toEqual([[['abc123', 'HEAD']]]);
+    expect(res.pull).toEqual({ files: ['a.js'], summary: { changes: 1, insertions: 2, deletions: 0 } });
+  });
+
+  it('should rebase local changes on the upstream with a WIP commit', async () => {
+    mocks.sg.status.mockResolvedValue({ ...BEHIND, modified: ['f.txt'] });
+
+    await pullRepo(fixtureContext, WORKTREE);
+
+    expect(mocks.sg.commit.mock.calls).toEqual([[WIP_COMMIT_MESSAGE, null, { '--no-verify': null, '-a': null }]]);
+    expect(mocks.sg.rebase.mock.calls).toEqual([[['@{upstream}']]]);
+    expect(mocks.sg.reset.mock.calls).toEqual(WIP_RESET_CALLS);
+    expect(mocks.sg.pull).not.toHaveBeenCalled();
+  });
+
+  it('should abort a failed rebase and merge, and report fetched only', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.sg.status.mockResolvedValue({ ...BEHIND, ahead: 1 });
+    mocks.sg.rebase.mockRejectedValue(new Error('CONFLICT'));
+    mocks.sg.merge.mockRejectedValue(new Error('CONFLICTS: c.txt:content'));
+
+    const res = await pullRepo(fixtureContext, WORKTREE);
+
+    expect(res.pull).toEqual(FETCHED_ONLY_PULL);
+    expect(mocks.sg.raw.mock.calls).toEqual(expect.arrayContaining([[['rebase', '--abort']], [['merge', '--abort']]]));
+    console.error.mockRestore();
+  });
+
+  it('should not touch an up to date worktree', async () => {
+    mocks.sg.status.mockResolvedValue({ ...BEHIND, behind: 0 });
+
+    const res = await pullRepo(fixtureContext, WORKTREE);
+
+    expect(res.pull).toEqual(UP_TO_DATE_PULL);
+    expect(mocks.sg.merge).not.toHaveBeenCalled();
+    expect(mocks.sg.rebase).not.toHaveBeenCalled();
+    expect(mocks.sg.status).toHaveBeenCalledTimes(1); // Reused for the result
+  });
+});
