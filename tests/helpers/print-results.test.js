@@ -81,6 +81,20 @@ describe('printResults', () => {
       expect(table).toMatch(/wt:feature +│ feature +│ ☠️ origin\/other +│/);
     });
 
+    it('should keep the worktrees below their repository when another repository has a longer name', () => {
+      process.stdout.isTTY = false;
+      const context = createContext();
+      context.repos.splice(1, 0, 'repo-1-memory'); // `localeCompare` sorts `repo-1-memory` before `repo-1/wt:feature`
+      printResults(context, new Date(), [
+        result('repo-1', { current: 'main', tracking: 'origin/main' }, { worktrees: 1 }),
+        result('repo-1-memory', { current: 'main', tracking: 'origin/main', modified: ['a.md'] }),
+        result('repo-1/wt:feature', { current: 'feature', tracking: 'origin/feature' }),
+      ]);
+      const rows = mocks.logger.logInfo.mock.calls[0][0].split('\n').filter((line) => line.startsWith('│'));
+
+      expect(rows.slice(1).map((row) => row.split('│')[1].trim())).toEqual(['repo-1', 'wt:feature', 'repo-1-memory']);
+    });
+
     it('should show the worktrees in yellow in a terminal with fewer colors', () => {
       process.stdout.isTTY = true;
       process.stdout.getColorDepth = () => 4;
