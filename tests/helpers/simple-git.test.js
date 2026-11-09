@@ -189,6 +189,25 @@ describe('simple-git helper', () => {
       expect(sg.status).toHaveBeenCalledTimes(2);
     });
 
+    it('should not look inside the submodules when one of them is a symbolic link', async () => {
+      const sg = createSg();
+      sg.status
+        .mockRejectedValueOnce(new Error("error: expected submodule path 'ai/docs' not to be a symbolic link\n"))
+        .mockResolvedValueOnce({ current: 'main', tracking: 'origin/main' });
+
+      const status = await gitHelper.getStatus(sg);
+      expect(status).toEqual({ current: 'main', tracking: 'origin/main' });
+      expect(sg.status.mock.calls).toEqual([[], [['--ignore-submodules=dirty']]]);
+    });
+
+    it('should not retry on other errors', async () => {
+      const sg = createSg();
+      sg.status.mockRejectedValueOnce(new Error('fatal: not a git repository'));
+
+      await expect(gitHelper.getStatus(sg)).rejects.toThrow('fatal: not a git repository');
+      expect(sg.status).toHaveBeenCalledTimes(1);
+    });
+
     it('should resolve the sha when the HEAD is detached', async () => {
       const sg = createSg();
       const sha = '0123456789abcdef0123456789abcdef01234567';
